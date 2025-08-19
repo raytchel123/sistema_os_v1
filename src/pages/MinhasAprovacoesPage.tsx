@@ -370,10 +370,20 @@ export function MinhasAprovacoesPage() {
                   <h3 className="font-semibold text-gray-900 text-lg line-clamp-2">
                     {ordem.titulo}
                   </h3>
-                    className="aspect-square bg-gradient-to-br from-purple-100 to-blue-100 rounded-lg mb-4 flex items-center justify-center overflow-hidden cursor-pointer"
-                    onClick={() => openOSDrawer(ordem.id)}
-                  </span>
-                    <span className="text-4xl">🎬</span>
+                </div>
+                
+                <div className="aspect-square bg-gradient-to-br from-purple-100 to-blue-100 rounded-lg mb-4 flex items-center justify-center overflow-hidden">
+                  <span className="text-4xl">🎬</span>
+                </div>
+                  
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-center space-x-2">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getMarcaColor(ordem.marca)}`}>
+                      {ordem.marca}
+                    </span>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getPriorityColor(ordem.prioridade)}`}>
+                      {ordem.prioridade}
+                    </span>
                   </div>
                   
                   {ordem.responsavel && (
@@ -387,6 +397,7 @@ export function MinhasAprovacoesPage() {
                     <Clock className="w-4 h-4 mr-2" />
                     <span>Criado em {formatDate(ordem.criado_em)}</span>
                   </div>
+                </div>
                 </div>
                 
                 <div className="flex space-x-3">
