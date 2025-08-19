@@ -726,16 +726,21 @@ export async function postSaveTokensBulk(req: Request) {
     console.log('💾 Salvando tokens para marca:', brandData.name);
     console.log('📊 Tokens a serem salvos:', Object.keys(tokenData));
 
+    // Preparar dados completos para upsert
+    const upsertData = {
+      org_id: userData.org_id,
+      brand_id: brand_id,
+      provider: 'INSTAGRAM', // Provider padrão para compatibilidade
+      ...tokenData,
+      is_active: true
+    };
+
     if (existing?.id) {
-      // Update existing record with new tokens
+      // Update existing record
       console.log('🔄 Updating existing token record...');
       const { error: updateError } = await admin
         .from('provider_settings')
-        .update({
-          ...tokenData,
-          is_active: true,
-          updated_at: new Date().toISOString()
-        })
+        .update(upsertData)
         .eq('id', existing.id);
       
       if (updateError) {
@@ -745,16 +750,11 @@ export async function postSaveTokensBulk(req: Request) {
         console.log('✅ Tokens updated successfully');
       }
     } else {
-      // Insert new record for this brand
+      // Insert new record
       console.log('➕ Creating new token record for brand...');
       const { error: insertError } = await admin
         .from('provider_settings')
-        .insert({
-          org_id: userData.org_id,
-          brand_id: brand_id,
-          ...tokenData,
-          is_active: true
-        });
+        .insert(upsertData);
       
       if (insertError) {
         console.error('❌ Error inserting tokens:', insertError);
@@ -820,16 +820,17 @@ export async function getSavedTokensBulk(req: Request) {
 
     console.log('✅ DEBUG - Marca validada:', brandData.name);
 
-    // Buscar tokens da marca por provider
-    const { data: tokens, error: tokensError } = await admin
+    // Buscar tokens da marca na tabela provider_settings
+    const { data: tokenRecord, error: tokensError } = await admin
       .from('provider_settings')
-      .select('provider, api_key, instagram_token')
+      .select('instagram_token, youtube_api_key, tiktok_token')
       .eq('org_id', userData.org_id)
       .eq('brand_id', brand_id)
-      .eq('is_active', true);
+      .eq('is_active', true)
+      .maybeSingle();
 
     if (tokensError) {
-      console.error('❌ DEBUG - Error fetching tokens:', tokensError);
+      console.error('❌ DEBUG - Error fetching token record:', tokensError);
       return new Response(
         JSON.stringify({
           instagram_token: '',
@@ -840,28 +841,19 @@ export async function getSavedTokensBulk(req: Request) {
       );
     }
 
-    console.log('🔑 DEBUG - Raw tokens from DB:', tokens);
+    console.log('🔑 DEBUG - Raw token record from DB:', tokenRecord);
 
-    // Mapear providers para campos de resposta
+    // Usar diretamente as colunas específicas do registro
     const result = {
       instagram_token: '',
       youtube_api_key: '',
       tiktok_token: ''
     };
 
-    if (tokens && tokens.length > 0) {
-      tokens.forEach(tokenRecord => {
-        // Usar as colunas específicas de cada token
-        if (tokenRecord.provider === 'INSTAGRAM' && tokenRecord.instagram_token) {
-          result.instagram_token = tokenRecord.instagram_token;
-        }
-        if (tokenRecord.provider === 'YOUTUBE' && tokenRecord.youtube_api_key) {
-          result.youtube_api_key = tokenRecord.youtube_api_key;
-        }
-        if (tokenRecord.provider === 'TIKTOK' && tokenRecord.tiktok_token) {
-          result.tiktok_token = tokenRecord.tiktok_token;
-        }
-      });
+    if (tokenRecord) {
+      result.instagram_token = tokenRecord.instagram_token || '';
+      result.youtube_api_key = tokenRecord.youtube_api_key || '';
+      result.tiktok_token = tokenRecord.tiktok_token || '';
     }
 
     console.log('🔑 DEBUG - Final result for brand', brandData.name, ':', {

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, Calendar, Clock, User, Tag, Shield } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { showToast } from '../components/ui/Toast';
+import { OSDrawer } from '../components/kanban/OSDrawer';
 
 interface OS {
   id: string;
@@ -32,6 +33,8 @@ export function MinhasAprovacoesPage() {
   const [scheduleDate, setScheduleDate] = useState('');
   const [scheduleTime, setScheduleTime] = useState('11:00');
   const [actionLoading, setActionLoading] = useState(false);
+  const [selectedOSForEdit, setSelectedOSForEdit] = useState<any>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   
   const { user } = useAuth();
 
@@ -221,6 +224,45 @@ export function MinhasAprovacoesPage() {
     }
   };
 
+  const openOSDrawer = async (osId: string) => {
+    try {
+      console.log('🔍 MinhasAprovacoesPage - Opening drawer for OS:', osId);
+      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
+      if (!session) return;
+
+      const headers = {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await fetch(`${apiUrl}/api/ordens/${osId}`, { headers });
+      
+      if (response.ok) {
+        const osData = await response.json();
+        console.log('📦 MinhasAprovacoesPage - Raw API response:', osData);
+        
+        setSelectedOSForEdit(osData);
+        setIsDrawerOpen(true);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Erro ao carregar OS:', response.status, errorData);
+        showToast.error(`Erro ao carregar OS (${response.status}): ${errorData.error || 'Erro desconhecido'}`);
+      }
+    } catch (err) {
+      console.error('Erro ao carregar OS:', err);
+      showToast.error('Erro ao carregar OS');
+    }
+  };
+
+  const closeDrawer = () => {
+    setIsDrawerOpen(false);
+    setSelectedOSForEdit(null);
+  };
+
+  const handleUpdate = () => {
+    fetchOrdens(); // Refresh list after update
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
@@ -318,25 +360,20 @@ export function MinhasAprovacoesPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {ordens.map((ordem) => (
-            <div key={ordem.id} className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+            <div 
+              key={ordem.id} 
+              className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => openOSDrawer(ordem.id)}
+            >
               <div className="p-6">
                 <div className="flex items-start justify-between mb-4">
                   <h3 className="font-semibold text-gray-900 text-lg line-clamp-2">
                     {ordem.titulo}
                   </h3>
-                  <span className={`text-xs px-2 py-1 rounded-full border ${getPriorityColor(ordem.prioridade)}`}>
-                    {ordem.prioridade}
+                    className="aspect-square bg-gradient-to-br from-purple-100 to-blue-100 rounded-lg mb-4 flex items-center justify-center overflow-hidden cursor-pointer"
+                    onClick={() => openOSDrawer(ordem.id)}
                   </span>
-                </div>
-                
-                <div className="space-y-3 mb-6">
-                  <div className="flex items-center justify-between">
-                    <span className={`text-xs px-2 py-1 rounded ${getMarcaColor(ordem.marca)}`}>
-                      {ordem.marca}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {ordem.objetivo}
-                    </span>
+                    <span className="text-4xl">🎬</span>
                   </div>
                   
                   {ordem.responsavel && (
@@ -354,7 +391,8 @@ export function MinhasAprovacoesPage() {
                 
                 <div className="flex space-x-3">
                   <button
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       setSelectedOS(ordem);
                       setShowApproveModal(true);
                     }}
@@ -365,7 +403,8 @@ export function MinhasAprovacoesPage() {
                   </button>
                   
                   <button
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       setSelectedOS(ordem);
                       setShowRejectModal(true);
                     }}
@@ -481,6 +520,13 @@ export function MinhasAprovacoesPage() {
           </div>
         </div>
       )}
+
+      <OSDrawer
+        isOpen={isDrawerOpen}
+        onClose={closeDrawer}
+        ordem={selectedOSForEdit}
+        onUpdate={handleUpdate}
+      />
     </div>
   );
 }

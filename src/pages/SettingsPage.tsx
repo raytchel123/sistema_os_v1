@@ -130,10 +130,16 @@ export function SettingsPage() {
       
       if (response.ok) {
         const data = await response.json();
+        console.log('🔑 DEBUG - Tokens received from API:', data);
         setTokens({
           INSTAGRAM: data.instagram_token || '',
           YOUTUBE: data.youtube_api_key || '',
           TIKTOK: data.tiktok_token || ''
+        });
+        console.log('🔑 DEBUG - Tokens set in state:', {
+          INSTAGRAM: !!data.instagram_token,
+          YOUTUBE: !!data.youtube_api_key,
+          TIKTOK: !!data.tiktok_token
         });
       } else {
         console.error('Erro ao carregar tokens:', response.status);
