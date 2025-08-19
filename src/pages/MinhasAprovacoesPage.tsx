@@ -426,7 +426,6 @@ export function MinhasAprovacoesPage() {
                   </button>
                 </div>
               </div>
-            </div>
           ))}
         </div>
       )}
