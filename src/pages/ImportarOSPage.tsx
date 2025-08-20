@@ -461,21 +461,21 @@ Data criação: 2025-01-20`;
 
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-gray-500">Objetivo:</span>
-                      <span className={`text-xs px-2 py-1 rounded ${getObjetivoColor(item.objetivo)}`}>
+                      <span className={"text-xs px-2 py-1 rounded " + getObjetivoColor(item.objetivo)}>
                         {item.objetivo}
                       </span>
                     </div>
 
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-gray-500">Tipo:</span>
-                      <span className={`text-xs px-2 py-1 rounded ${getTipoColor(item.tipo)}`}>
+                      <span className={"text-xs px-2 py-1 rounded " + getTipoColor(item.tipo)}>
                         {item.tipo}
                       </span>
                     </div>
 
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-gray-500">Prioridade:</span>
-                      <span className={`text-xs px-2 py-1 rounded ${getPrioridadeColor(item.prioridade)}`}>
+                      <span className={"text-xs px-2 py-1 rounded " + getPrioridadeColor(item.prioridade)}>
                         {item.prioridade}
                       </span>
                     </div>
