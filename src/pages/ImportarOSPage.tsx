@@ -264,7 +264,6 @@ Roteiro: Mostrar produtos básicos e aplicação simples
 Legenda: Como fazer maquiagem natural para o dia a dia ✨ Tutorial completo no vídeo! Qual produto você mais usa? #maquiagem #beleza #tutorial #natural
 Prazo: 2025-01-25
 Data criação: 2025-01-20
-Data criação: 2025-01-20
 
 IDEIA 2:
 Título: Benefícios do skincare noturno
@@ -277,7 +276,6 @@ Roteiro: Explicar rotina noturna passo a passo
 Legenda: Os benefícios do skincare noturno que você precisa conhecer 🌙 Sua pele agradece! Qual seu produto favorito para a noite? #skincare #cuidados #noite #pele
 Prazo: 2025-01-27
 Data criação: 2025-01-20
-Data criação: 2025-01-20
 
 IDEIA 3:
 Título: Promoção especial de harmonização facial
@@ -289,7 +287,6 @@ CTA: Link na bio para agendar!
 Roteiro: Mostrar antes e depois, explicar procedimento
 Legenda: 🚨 PROMOÇÃO ESPECIAL! 50% OFF em harmonização facial. Últimas vagas disponíveis! Link na bio para agendar 💉 #promocao #harmonizacao #desconto #estetica
 Prazo: 2025-01-22
-Data criação: 2025-01-20`;
 Data criação: 2025-01-20`;
 
     const blob = new Blob([template], { type: 'text/plain' });
@@ -464,7 +461,7 @@ Data criação: 2025-01-20`;
 
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-gray-500">Objetivo:</span>
-                      <span className={`text-xs px-2 py-1 rounded ${getObjetivoColor(item.objetivo)}`}>
+                      <span className={\`text-xs px-2 py-1 rounded ${getObjetivoColor(item.objetivo)}`}>
                         {item.objetivo}
                       </span>
                     </div>
@@ -870,7 +867,7 @@ IDEIA 1:
 Título: Como fazer maquiagem natural
 Descrição: Tutorial para maquiagem do dia a dia
 Data de Publicação: 2025-01-25 10:00
-Prioridade: HIGH
+Prioridade: Alta
 Gancho: Você não vai acreditar como é fácil!
 CTA: Salva esse post e marca uma amiga!
 Roteiro: Mostrar produtos básicos e aplicação
@@ -882,7 +879,7 @@ IDEIA 2:
 Título: Skincare noturno
 Descrição: Cuidados especiais para a noite
 Data de Publicação: 2025-01-27 15:00
-Prioridade: MEDIUM
+Prioridade: Média
 ..."
           />
           
