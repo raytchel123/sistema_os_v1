@@ -19,6 +19,7 @@ import { TendenciasPage } from './pages/TendenciasPage';
 import { AuditoriaConteudoPage } from './pages/AuditoriaConteudoPage';
 import { UsuariosPage } from './pages/UsuariosPage';
 import { ImportarOSPage } from './pages/ImportarOSPage';
+import { IdeasPendentesPage } from './pages/IdeasPendentesPage';
 import { ToastContainer } from './components/ui/Toast';
 
 function App() {
