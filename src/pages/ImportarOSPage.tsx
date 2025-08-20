@@ -461,7 +461,7 @@ Data criação: 2025-01-20`;
 
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-gray-500">Objetivo:</span>
-                      <span className={\`text-xs px-2 py-1 rounded ${getObjetivoColor(item.objetivo)}`}>
+                      <span className={`text-xs px-2 py-1 rounded ${getObjetivoColor(item.objetivo)}`}>
                         {item.objetivo}
                       </span>
                     </div>
