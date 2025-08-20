@@ -168,13 +168,13 @@ export function Sidebar() {
 
       {/* Sidebar */}
       <div className={`
-        fixed lg:static inset-y-0 left-0 z-40 lg:z-auto
+        fixed lg:static inset-y-0 left-0 z-40 lg:z-auto lg:h-auto
         w-72 bg-white border-r border-gray-200 
         transform transition-transform duration-300 ease-in-out
-        flex flex-col
+        flex flex-col h-full lg:h-auto
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
-        <div className="flex flex-col h-full min-h-screen lg:min-h-0">
+        <div className="flex flex-col h-full overflow-hidden">
           {/* Header */}
           <div className="px-6 py-6 border-b border-gray-200">
             <div className="flex items-center space-x-3">
@@ -189,7 +189,7 @@ export function Sidebar() {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-6 space-y-2">
+          <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
             {allMenuItems.map((item) => (
               <NavLink
                 key={item.to}
@@ -215,7 +215,7 @@ export function Sidebar() {
           </nav>
 
           {/* User section */}
-          <div className="px-4 py-4 border-t border-gray-200 mt-auto bg-white">
+          <div className="px-4 py-4 border-t border-gray-200 mt-auto bg-white flex-shrink-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
