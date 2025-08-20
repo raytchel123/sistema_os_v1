@@ -19,6 +19,7 @@ interface Ideia {
   categorias_criativos: string[];
   raw_media_links: string[];
   prazo: string;
+  data_publicacao_prevista: string;
   status: 'PENDENTE' | 'APROVADA' | 'REJEITADA';
   aprovada_por_user: { id: string; nome: string; papel: string } | null;
   rejeitada_por_user: { id: string; nome: string; papel: string } | null;
@@ -198,7 +199,9 @@ export function IdeasPendentesPage() {
       canais: ideia.canais,
       categorias_criativos: ideia.categorias_criativos,
       raw_media_links: ideia.raw_media_links,
-      prazo: ideia.prazo
+      prazo: ideia.prazo,
+      data_publicacao_prevista: ideia.data_publicacao_prevista ? 
+        new Date(ideia.data_publicacao_prevista).toISOString().slice(0, 16) : ''
     });
     setShowEditModal(true);
   };
@@ -399,6 +402,16 @@ export function IdeasPendentesPage() {
                   {tab.count}
                 </span>
               )}
+              
+              {selectedIdeia.data_publicacao_prevista && (
+                <div>
+                  <label className="text-sm font-medium text-gray-500 uppercase tracking-wide">Data de Publicação</label>
+                  <p className="text-gray-700 mt-1 flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    {new Date(selectedIdeia.data_publicacao_prevista).toLocaleString('pt-BR')}
+                  </p>
+                </div>
+              )}
             </button>
           ))}
         </nav>
@@ -431,8 +444,7 @@ export function IdeasPendentesPage() {
                   <h3 className="font-semibold text-gray-900 text-lg line-clamp-2 flex-1">
                     {ideia.titulo}
                   </h3>
-                  <span className={`ml-2 text-xs px-2 py-1 rounded-full border font-medium ${getStatusColor(ideia.status)}`}>
-                    {getStatusLabel(ideia.status)}
+                    {selectedIdeia.prioridade}
                   </span>
                 </div>
                 

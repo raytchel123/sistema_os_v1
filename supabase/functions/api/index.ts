@@ -49,6 +49,7 @@ class OSParser {
       const script = this.extractField(section, ['roteiro', 'script', 'texto']);
       const legenda = this.extractField(section, ['legenda', 'caption', 'copy']);
       const prazo = this.extractField(section, ['prazo', 'deadline', 'data']);
+      const dataPublicacao = this.extractField(section, ['data de publicacao', 'data publicacao', 'publicacao']);
 
       // Classify based on content
       const objetivo = this.classifyObjective(titulo + ' ' + descricao);
@@ -74,6 +75,7 @@ class OSParser {
         script_text: script,
         legenda,
         prazo,
+        data_publicacao_prevista: dataPublicacao,
         raw_media_links: mediaLinks
       });
     });
@@ -172,14 +174,18 @@ class OSParser {
   private static classifyPriority(text: string): 'LOW' | 'MEDIUM' | 'HIGH' {
     const lowerText = text.toLowerCase();
     
-    const highKeywords = ['urgente', 'importante', 'critico', 'prioritario'];
-    const lowKeywords = ['opcional', 'futuro', 'quando possivel'];
+    const highKeywords = ['urgente', 'importante', 'critico', 'prioritario', 'alta', 'high'];
+    const lowKeywords = ['opcional', 'futuro', 'quando possivel', 'baixa', 'low'];
+    const mediumKeywords = ['media', 'medium'];
     
     if (highKeywords.some(keyword => lowerText.includes(keyword))) {
       return 'HIGH';
     }
     if (lowKeywords.some(keyword => lowerText.includes(keyword))) {
       return 'LOW';
+    }
+    if (mediumKeywords.some(keyword => lowerText.includes(keyword))) {
+      return 'MEDIUM';
     }
     return 'MEDIUM';
   }
