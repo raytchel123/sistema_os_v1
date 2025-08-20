@@ -202,6 +202,22 @@ export function IdeasPendentesPage() {
       prazo: ideia.prazo,
       data_publicacao_prevista: ideia.data_publicacao_prevista ? 
         new Date(ideia.data_publicacao_prevista).toISOString().slice(0, 16) : ''
+      titulo: ideia.titulo,
+      descricao: ideia.descricao,
+      marca: ideia.marca,
+      objetivo: ideia.objetivo,
+      tipo: ideia.tipo,
+      prioridade: ideia.prioridade,
+      gancho: ideia.gancho,
+      cta: ideia.cta,
+      script_text: ideia.script_text,
+      legenda: ideia.legenda,
+      canais: ideia.canais,
+      categorias_criativos: ideia.categorias_criativos,
+      raw_media_links: ideia.raw_media_links,
+      prazo: ideia.prazo,
+      data_publicacao_prevista: ideia.data_publicacao_prevista ? 
+        new Date(ideia.data_publicacao_prevista).toISOString().slice(0, 16) : ''
     });
     setShowEditModal(true);
   };

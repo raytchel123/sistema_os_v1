@@ -44,11 +44,14 @@ class OSParser {
       const gancho = this.extractField(section, ['gancho', 'hook']);
       const cta = this.extractField(section, ['cta', 'call to action', 'chamada']);
       const script = this.extractField(section, ['roteiro', 'script', 'texto']);
+      const legenda = this.extractField(section, ['legenda', 'caption']);
+      const prazo = this.extractField(section, ['prazo', 'deadline']);
+      const dataPublicacao = this.extractDataPublicacao(section);
 
       // Classify based on content
       const objetivo = this.classifyObjective(titulo + ' ' + descricao);
       const tipo = this.classifyType(titulo + ' ' + descricao);
-      const prioridade = this.classifyPriority(titulo + ' ' + descricao);
+      const prioridade = this.extractPrioridade(section);
 
       // Extract media links
       const mediaLinks = this.extractMediaLinks(section);
@@ -63,10 +66,13 @@ class OSParser {
         objetivo,
         tipo,
         prioridade,
+        data_publicacao_prevista: dataPublicacao,
         canais,
         gancho,
         cta,
         script_text: script,
+        legenda,
+        prazo,
         raw_media_links: mediaLinks
       });
     });
@@ -119,6 +125,42 @@ class OSParser {
       }
     }
     return undefined;
+  }
+
+  private static extractDataPublicacao(text: string): string | undefined {
+    const regex = /data\s+de\s+publicação:\s*(.+?)(?:\n|$)/i;
+    const match = text.match(regex);
+    if (match) {
+      const dateTimeStr = match[1].trim();
+      // Convert "2025-01-25 10:00" to ISO format
+      if (dateTimeStr.match(/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}$/)) {
+        return `${dateTimeStr}:00`; // Add seconds
+      }
+      return dateTimeStr;
+    }
+    return undefined;
+  }
+
+  private static extractPrioridade(text: string): 'LOW' | 'MEDIUM' | 'HIGH' {
+    const regex = /prioridade:\s*(.+?)(?:\n|$)/i;
+    const match = text.match(regex);
+    if (match) {
+      const prioridadeText = match[1].trim().toLowerCase();
+      if (prioridadeText.includes('alta') || prioridadeText === 'high') {
+        return 'HIGH';
+      }
+      if (prioridadeText.includes('baixa') || prioridadeText === 'low') {
+        return 'LOW';
+      }
+      if (prioridadeText === 'medium') {
+        return 'MEDIUM';
+      }
+      // Try exact match
+      if (prioridadeText === 'high') return 'HIGH';
+      if (prioridadeText === 'medium') return 'MEDIUM';
+      if (prioridadeText === 'low') return 'LOW';
+    }
+    return 'MEDIUM'; // Default
   }
 
   private static extractMediaLinks(text: string): string[] {
