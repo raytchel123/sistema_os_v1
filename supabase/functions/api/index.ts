@@ -721,6 +721,24 @@ Deno.serve(async (req) => {
 
       console.log(`💾 Committing ${items.length} OS to database...`);
       
+      // Create import session for tracking
+      const { data: importSession, error: sessionError } = await supabaseClient
+        .from('import_sessions')
+        .insert({
+          org_id: currentUser?.org_id || null,
+          user_id: currentUser?.id || null,
+          source_type: 'TEXT_PASTE',
+          text_size_bytes: JSON.stringify(items).length,
+          llm_provider: 'HEURISTIC',
+          items_detected: items.length
+        })
+        .select('id')
+        .single();
+
+      if (sessionError) {
+        console.error('Error creating import session:', sessionError);
+      }
+
       const results = {
         created: 0,
         skipped: 0,
@@ -729,50 +747,52 @@ Deno.serve(async (req) => {
 
       for (const item of items) {
         try {
-          // Check for duplicates
-          const { data: existing } = await supabaseClient
-            .from('ordens_de_servico')
+          // Check for duplicates in ideias table
+          const { data: existingIdeia } = await supabaseClient
+            .from('ideias')
             .select('id')
             .eq('titulo', item.titulo)
             .eq('marca', item.marca)
+            .eq('org_id', currentUser?.org_id || null)
             .single();
 
-          if (existing) {
+          if (existingIdeia) {
             results.skipped++;
             continue;
           }
 
-          // Create OS
-          const osData = {
+          // Create ideia instead of OS
+          const ideiaData = {
             titulo: item.titulo,
             descricao: item.descricao || null,
             marca: item.marca,
             objetivo: item.objetivo,
             tipo: item.tipo,
-            status: item.status || 'ROTEIRO',
-            data_publicacao_prevista: item.data_publicacao_prevista || null,
-            canais: item.canais || [],
             prioridade: item.prioridade || 'MEDIUM',
             gancho: item.gancho || null,
             cta: item.cta || null,
-            midia_bruta_links: item.raw_media_links || [],
             script_text: item.script_text || null,
             legenda: item.legenda || null,
+            canais: item.canais || [],
+            categorias_criativos: item.categorias_criativos || [],
+            raw_media_links: item.raw_media_links || [],
             prazo: item.prazo ? new Date(item.prazo).toISOString().split('T')[0] : null,
+            status: 'PENDENTE',
+            import_session_id: importSession?.id || null,
             org_id: currentUser?.org_id || null,
             created_by: currentUser?.id || null
           };
 
-          console.log('🔍 DEBUG osData para criação:', {
-            titulo: osData.titulo,
+          console.log('🔍 DEBUG ideiaData para criação:', {
+            titulo: ideiaData.titulo,
             prazo_original: item.prazo,
-            prazo_formatado: osData.prazo,
+            prazo_formatado: ideiaData.prazo,
             item_completo: item
           });
 
-          const { data: newOS, error } = await supabaseClient
-            .from('ordens_de_servico')
-            .insert(osData)
+          const { data: newIdeia, error } = await supabaseClient
+            .from('ideias')
+            .insert(ideiaData)
             .select('id, titulo')
             .single();
 
@@ -784,12 +804,12 @@ Deno.serve(async (req) => {
           } else {
             results.created++;
             
-            // Log creation
+            // Log ideia creation
             await supabaseClient.from('logs_evento').insert({
-              os_id: newOS.id,
+              os_id: null,
               user_id: currentUser?.id || null,
               acao: 'CRIAR',
-              detalhe: `OS importada: ${newOS.titulo}`,
+              detalhe: `Ideia importada: ${newIdeia.titulo}`,
               timestamp: new Date().toISOString()
             });
           }
@@ -799,6 +819,18 @@ Deno.serve(async (req) => {
             error: error instanceof Error ? error.message : 'Erro desconhecido'
           });
         }
+      }
+
+      // Update import session with results
+      if (importSession?.id) {
+        await supabaseClient
+          .from('import_sessions')
+          .update({
+            items_created: results.created,
+            items_skipped: results.skipped,
+            error_details: results.errors.length > 0 ? JSON.stringify(results.errors) : null
+          })
+          .eq('id', importSession.id);
       }
 
       return new Response(

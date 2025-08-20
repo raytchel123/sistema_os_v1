@@ -23,6 +23,7 @@ export const templatePlatformEnum = pgEnum('template_platform_enum', ['REELS', '
 export const apiProviderEnum = pgEnum('api_provider_enum', ['OPENAI', 'ANTHROPIC', 'ELEVENLABS', 'HEYGEN', 'INSTAGRAM', 'YOUTUBE', 'TIKTOK']);
 export const postTypeEnum = pgEnum('post_type_enum', ['POST', 'STORY', 'REELS']);
 export const suggestionStatusEnum = pgEnum('suggestion_status_enum', ['SUGGESTION', 'IN_PRODUCTION', 'APPROVED', 'POSTED']);
+export const ideiaStatusEnum = pgEnum('ideia_status_enum', ['PENDENTE', 'APROVADA', 'REJEITADA']);
 
 // Organizações (Multi-tenant)
 export const organizations = pgTable('organizations', {
@@ -263,7 +264,56 @@ export const organizationsRelations = relations(organizations, ({ many }) => ({
   providerSettings: many(providerSettings),
   brands: many(brands),
   postSuggestions: many(postSuggestions),
+  ideias: many(ideias),
+  importSessions: many(importSessions),
+  ideias: many(ideias),
 }));
+// Ideias (imported content awaiting approval)
+export const ideias = pgTable('ideias', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  titulo: text('titulo').notNull(),
+  descricao: text('descricao'),
+  marca: marcaEnum('marca').notNull(),
+  objetivo: objetivoEnum('objetivo').notNull(),
+  tipo: tipoEnum('tipo').notNull(),
+  prioridade: prioridadeEnum('prioridade').notNull().default('MEDIUM'),
+  gancho: text('gancho'),
+  cta: text('cta'),
+  scriptText: text('script_text'),
+  legenda: text('legenda'),
+  canais: text('canais').array().default([]),
+  categoriasCriativos: text('categorias_criativos').array().default([]),
+  rawMediaLinks: text('raw_media_links').array().default([]),
+  prazo: timestamp('prazo', { mode: 'date' }),
+  status: ideiaStatusEnum('status').notNull().default('PENDENTE'),
+  aprovadaPor: uuid('aprovada_por').references(() => users.id, { onDelete: 'set null' }),
+  rejeitadaPor: uuid('rejeitada_por').references(() => users.id, { onDelete: 'set null' }),
+  motivoRejeicao: text('motivo_rejeicao'),
+  osCriadaId: uuid('os_criada_id').references(() => ordensDeServico.id, { onDelete: 'set null' }),
+  importSessionId: uuid('import_session_id').references(() => importSessions.id, { onDelete: 'set null' }),
+  orgId: uuid('org_id').references(() => organizations.id, { onDelete: 'cascade' }),
+  createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+  criadoEm: timestamp('criado_em', { withTimezone: true }).defaultNow(),
+  atualizadoEm: timestamp('atualizado_em', { withTimezone: true }).defaultNow(),
+});
+
+// Import Sessions (for tracking bulk imports)
+export const importSessions = pgTable('import_sessions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  orgId: uuid('org_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  sourceType: text('source_type').notNull(), // 'FILE_UPLOAD', 'TEXT_PASTE', 'API_IMPORT'
+  fileNames: text('file_names').array(),
+  textSizeBytes: integer('text_size_bytes'),
+  llmProvider: text('llm_provider'), // 'OPENAI', 'ANTHROPIC', 'HEURISTIC'
+  itemsDetected: integer('items_detected').default(0),
+  itemsCreated: integer('items_created').default(0),
+  itemsSkipped: integer('items_skipped').default(0),
+  errorDetails: text('error_details'), // JSON string
+  processingTimeMs: integer('processing_time_ms'),
+  criadoEm: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
+
 
 export const apiTokensRelations = relations(apiTokens, ({ one }) => ({
   organization: one(organizations, {
@@ -316,6 +366,45 @@ export const postSuggestionsRelations = relations(postSuggestions, ({ one }) => 
   }),
 }));
 
+export const ideiasRelations = relations(ideias, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [ideias.orgId],
+    references: [organizations.id],
+  }),
+  aprovadaPorUser: one(users, {
+    fields: [ideias.aprovadaPor],
+    references: [users.id],
+  }),
+  rejeitadaPorUser: one(users, {
+    fields: [ideias.rejeitadaPor],
+    references: [users.id],
+  }),
+  osCriada: one(ordensDeServico, {
+    fields: [ideias.osCriadaId],
+    references: [ordensDeServico.id],
+  }),
+  importSession: one(importSessions, {
+    fields: [ideias.importSessionId],
+    references: [importSessions.id],
+  }),
+  createdByUser: one(users, {
+    fields: [ideias.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const importSessionsRelations = relations(importSessions, ({ one, many }) => ({
+  organization: one(organizations, {
+    fields: [importSessions.orgId],
+    references: [organizations.id],
+  }),
+  user: one(users, {
+    fields: [importSessions.userId],
+    references: [users.id],
+  }),
+  ideias: many(ideias),
+}));
+
 export const usersRelations = relations(users, ({ many }) => ({
   organization: one(organizations, {
     fields: [users.orgId],
@@ -323,6 +412,10 @@ export const usersRelations = relations(users, ({ many }) => ({
   }),
   ordensResponsavel: many(ordensDeServico),
   logs: many(logsEvento),
+  ideiasAprovadas: many(ideias, { relationName: 'aprovadaPorUser' }),
+  ideiasRejeitadas: many(ideias, { relationName: 'rejeitadaPorUser' }),
+  ideiasCreated: many(ideias, { relationName: 'createdByUser' }),
+  importSessions: many(importSessions),
 }));
 
 export const ordensDeServicoRelations = relations(ordensDeServico, ({ one, many }) => ({
@@ -393,6 +486,11 @@ export type NewBrand = typeof brands.$inferInsert;
 export type PostSuggestion = typeof postSuggestions.$inferSelect;
 export type NewPostSuggestion = typeof postSuggestions.$inferInsert;
 
+export type Ideia = typeof ideias.$inferSelect;
+export type NewIdeia = typeof ideias.$inferInsert;
+export type ImportSession = typeof importSessions.$inferSelect;
+export type NewImportSession = typeof importSessions.$inferInsert;
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type OrdemServico = typeof ordensDeServico.$inferSelect;
@@ -415,6 +513,8 @@ export const DISTRIBUTION_STATUS_OPTIONS = ['DRAFT', 'SCHEDULED', 'POSTED', 'FAI
 export const API_PROVIDER_OPTIONS = ['OPENAI', 'ANTHROPIC', 'ELEVENLABS', 'HEYGEN', 'INSTAGRAM', 'YOUTUBE', 'TIKTOK'] as const;
 export const POST_TYPE_OPTIONS = ['POST', 'STORY', 'REELS'] as const;
 export const SUGGESTION_STATUS_OPTIONS = ['SUGGESTION', 'IN_PRODUCTION', 'APPROVED', 'POSTED'] as const;
+
+export const IDEIA_STATUS_OPTIONS = ['PENDENTE', 'APROVADA', 'REJEITADA'] as const;
 
 export const PAPEL_OPTIONS = ['COPY', 'AUDIO', 'VIDEO', 'EDITOR', 'REVISOR', 'CRISPIM', 'SOCIAL'] as const;
 export const MARCA_OPTIONS = ['RAYTCHEL', 'ZAFFIRA', 'ZAFF', 'CRISPIM', 'FAZENDA'] as const;
