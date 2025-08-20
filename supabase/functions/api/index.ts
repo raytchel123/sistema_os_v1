@@ -1255,6 +1255,58 @@ Deno.serve(async (req) => {
       );
     }
 
+    // PUT /ideias/:id - Update ideia
+    if (effectivePath.startsWith('/ideias/') && req.method === 'PUT' && pathParts.length === 2) {
+      const ideiaId = pathParts[1];
+      const body = await req.json();
+
+      const updateData = {
+        titulo: body.titulo,
+        descricao: body.descricao || null,
+        marca: body.marca,
+        objetivo: body.objetivo,
+        tipo: body.tipo,
+        prioridade: body.prioridade || 'MEDIUM',
+        gancho: body.gancho || null,
+        cta: body.cta || null,
+        script_text: body.script_text || null,
+        legenda: body.legenda || null,
+        canais: body.canais || [],
+        categorias_criativos: body.categorias_criativos || [],
+        raw_media_links: body.raw_media_links || [],
+        prazo: body.prazo ? new Date(body.prazo).toISOString().split('T')[0] : null,
+        atualizado_em: new Date().toISOString()
+      };
+
+      const { data: updatedIdeia, error } = await supabaseClient
+        .from('ideias')
+        .update(updateData)
+        .eq('id', ideiaId)
+        .select('*')
+        .single();
+
+      if (error) {
+        return new Response(
+          JSON.stringify({ error: error.message }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Log update
+      await supabaseClient.from('logs_evento').insert({
+        os_id: null,
+        user_id: currentUser?.id || null,
+        acao: 'MUDAR_STATUS',
+        detalhe: `Ideia editada: ${updatedIdeia.titulo}`,
+        timestamp: new Date().toISOString()
+      });
+
+      return new Response(
+        JSON.stringify(updatedIdeia),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // DELETE /users/:id - Delete user
     if (effectivePath.startsWith('/users/') && req.method === 'DELETE') {
       const userId = pathParts[1];

@@ -256,27 +256,38 @@ export function ImportarOSPage() {
     const template = `IDEIA 1:
 Título: Como fazer maquiagem natural para o dia a dia
 Descrição: Tutorial passo a passo para uma maquiagem leve e natural
+Data de Publicação: 2025-01-25 10:00
+Prioridade: Alta
 Gancho: Você não vai acreditar como é fácil!
 CTA: Salva esse post e marca uma amiga!
 Roteiro: Mostrar produtos básicos e aplicação simples
 Legenda: Como fazer maquiagem natural para o dia a dia ✨ Tutorial completo no vídeo! Qual produto você mais usa? #maquiagem #beleza #tutorial #natural
 Prazo: 2025-01-25
+Data criação: 2025-01-20
 
 IDEIA 2:
 Título: Benefícios do skincare noturno
 Descrição: Por que sua pele precisa de cuidados especiais à noite
+Data de Publicação: 2025-01-27 15:00
+Prioridade: Média
 Gancho: O segredo para acordar com pele perfeita
 CTA: Comenta qual produto você usa à noite!
+Roteiro: Explicar rotina noturna passo a passo
 Legenda: Os benefícios do skincare noturno que você precisa conhecer 🌙 Sua pele agradece! Qual seu produto favorito para a noite? #skincare #cuidados #noite #pele
 Prazo: 2025-01-27
+Data criação: 2025-01-20
 
 IDEIA 3:
 Título: Promoção especial de harmonização facial
 Descrição: Desconto exclusivo para novos clientes
+Data de Publicação: 2025-01-22 11:00
+Prioridade: Alta
 Gancho: Últimas vagas com 50% de desconto!
+CTA: Link na bio para agendar!
+Roteiro: Mostrar antes e depois, explicar procedimento
 Legenda: 🚨 PROMOÇÃO ESPECIAL! 50% OFF em harmonização facial. Últimas vagas disponíveis! Link na bio para agendar 💉 #promocao #harmonizacao #desconto #estetica
 Prazo: 2025-01-22
-CTA: Link na bio para agendar!`;
+Data criação: 2025-01-20`;
 
     const blob = new Blob([template], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -855,11 +866,20 @@ Exemplo:
 IDEIA 1:
 Título: Como fazer maquiagem natural
 Descrição: Tutorial para maquiagem do dia a dia
+Data de Publicação: 2025-01-25 10:00
+Prioridade: Alta
 Gancho: Você não vai acreditar como é fácil!
+CTA: Salva esse post e marca uma amiga!
+Roteiro: Mostrar produtos básicos e aplicação
+Legenda: Tutorial completo com hashtags
+Prazo: 2025-01-25
+Data criação: 2025-01-20
 
 IDEIA 2:
-Título: Benefícios do skincare noturno
+Título: Skincare noturno
 Descrição: Cuidados especiais para a noite
+Data de Publicação: 2025-01-27 15:00
+Prioridade: Média
 ..."
           />
           

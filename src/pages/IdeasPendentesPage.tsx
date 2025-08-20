@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, Eye, Clock, Tag, User, AlertTriangle, FileText, Calendar, Lightbulb } from 'lucide-react';
+import { CheckCircle, XCircle, Eye, Clock, Tag, User, AlertTriangle, FileText, Calendar, Lightbulb, Edit, Save, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { showToast } from '../components/ui/Toast';
 
@@ -40,6 +40,10 @@ export function IdeasPendentesPage() {
   const [rejectReason, setRejectReason] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'pendentes' | 'aprovadas' | 'rejeitadas'>('pendentes');
+  const [editingIdeia, setEditingIdeia] = useState<Ideia | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState<Partial<Ideia>>({});
+  const [editLoading, setEditLoading] = useState(false);
   
   const { user } = useAuth();
   const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
@@ -175,6 +179,86 @@ export function IdeasPendentesPage() {
     } finally {
       showToast.dismiss(loadingToast);
       setActionLoading(null);
+    }
+  };
+
+  const openEditModal = (ideia: Ideia) => {
+    setEditingIdeia(ideia);
+    setEditForm({
+      titulo: ideia.titulo,
+      descricao: ideia.descricao,
+      marca: ideia.marca,
+      objetivo: ideia.objetivo,
+      tipo: ideia.tipo,
+      prioridade: ideia.prioridade,
+      gancho: ideia.gancho,
+      cta: ideia.cta,
+      script_text: ideia.script_text,
+      legenda: ideia.legenda,
+      canais: ideia.canais,
+      categorias_criativos: ideia.categorias_criativos,
+      raw_media_links: ideia.raw_media_links,
+      prazo: ideia.prazo
+    });
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingIdeia) return;
+
+    setEditLoading(true);
+    const loadingToast = showToast.loading('Salvando alterações...');
+    
+    try {
+      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
+      if (!session) return;
+
+      const headers = {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await fetch(`${apiUrl}/api/ideias/${editingIdeia.id}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(editForm)
+      });
+
+      if (response.ok) {
+        showToast.success('Ideia atualizada com sucesso!');
+        setShowEditModal(false);
+        setEditingIdeia(null);
+        setEditForm({});
+        fetchIdeias(); // Refresh list
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        showToast.error(`Erro ao salvar ideia: ${errorData.error || 'Erro desconhecido'}`);
+      }
+    } catch (err) {
+      showToast.error('Erro ao salvar ideia');
+    } finally {
+      showToast.dismiss(loadingToast);
+      setEditLoading(false);
+    }
+  };
+
+  const closeEditModal = () => {
+    setShowEditModal(false);
+    setEditingIdeia(null);
+    setEditForm({});
+  };
+
+  const handleCanaisChange = (canal: string, checked: boolean) => {
+    if (checked) {
+      setEditForm(prev => ({
+        ...prev,
+        canais: [...(prev.canais || []), canal]
+      }));
+    } else {
+      setEditForm(prev => ({
+        ...prev,
+        canais: (prev.canais || []).filter(c => c !== canal)
+      }));
     }
   };
 
@@ -415,6 +499,14 @@ export function IdeasPendentesPage() {
                   {ideia.status === 'PENDENTE' && userCanApprove && (
                     <>
                       <button
+                        onClick={() => openEditModal(ideia)}
+                        className="flex-1 border border-blue-600 text-blue-600 py-2 px-3 rounded-lg hover:bg-blue-50 transition-colors flex items-center justify-center text-sm font-medium"
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        Editar
+                      </button>
+                      
+                      <button
                         onClick={() => handleApprove(ideia.id)}
                         disabled={actionLoading === ideia.id}
                         className="flex-1 bg-green-600 text-white py-2 px-3 rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors flex items-center justify-center text-sm font-medium"
@@ -437,6 +529,231 @@ export function IdeasPendentesPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Modal de Edição */}
+      {showEditModal && editingIdeia && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-gray-900">
+                Editar Ideia
+              </h3>
+              <button
+                onClick={closeEditModal}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Título */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Título *
+                </label>
+                <input
+                  type="text"
+                  value={editForm.titulo || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, titulo: e.target.value }))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                  placeholder="Título da ideia"
+                />
+              </div>
+
+              {/* Descrição */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Descrição *
+                </label>
+                <textarea
+                  value={editForm.descricao || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, descricao: e.target.value }))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent resize-none"
+                  rows={4}
+                  placeholder="Descrição detalhada"
+                />
+              </div>
+
+              {/* Marca */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Marca *
+                </label>
+                <select
+                  value={editForm.marca || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, marca: e.target.value }))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                >
+                  <option value="RAYTCHEL">Raytchel</option>
+                  <option value="ZAFFIRA">Zaffira</option>
+                  <option value="ZAFF">Zaff</option>
+                  <option value="CRISPIM">Crispim</option>
+                  <option value="FAZENDA">Fazenda</option>
+                </select>
+              </div>
+
+              {/* Objetivo */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Objetivo *
+                </label>
+                <select
+                  value={editForm.objetivo || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, objetivo: e.target.value }))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                >
+                  <option value="ATRACAO">Atração</option>
+                  <option value="NUTRICAO">Nutrição</option>
+                  <option value="CONVERSAO">Conversão</option>
+                </select>
+              </div>
+
+              {/* Tipo */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tipo *
+                </label>
+                <select
+                  value={editForm.tipo || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, tipo: e.target.value }))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                >
+                  <option value="EDUCATIVO">Educativo</option>
+                  <option value="HISTORIA">História</option>
+                  <option value="CONVERSAO">Conversão</option>
+                </select>
+              </div>
+
+              {/* Prioridade */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Prioridade *
+                </label>
+                <select
+                  value={editForm.prioridade || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, prioridade: e.target.value }))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                >
+                  <option value="HIGH" className="text-red-600 font-medium">🔴 Alta</option>
+                  <option value="MEDIUM" className="text-yellow-600 font-medium">🟡 Média</option>
+                  <option value="LOW" className="text-green-600 font-medium">🟢 Baixa</option>
+                </select>
+              </div>
+
+              {/* Gancho */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Gancho
+                </label>
+                <textarea
+                  value={editForm.gancho || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, gancho: e.target.value }))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent resize-none"
+                  rows={3}
+                  placeholder="Gancho principal do conteúdo"
+                />
+              </div>
+
+              {/* CTA */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Call to Action (CTA)
+                </label>
+                <input
+                  type="text"
+                  value={editForm.cta || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, cta: e.target.value }))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                  placeholder="Ex: Acesse o link na bio para saber mais"
+                />
+              </div>
+
+              {/* Roteiro */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Roteiro / Script
+                </label>
+                <textarea
+                  value={editForm.script_text || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, script_text: e.target.value }))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent resize-none font-mono text-sm"
+                  rows={8}
+                  placeholder="Roteiro detalhado do conteúdo"
+                />
+              </div>
+
+              {/* Legenda */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Legenda
+                </label>
+                <textarea
+                  value={editForm.legenda || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, legenda: e.target.value }))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent resize-none"
+                  rows={6}
+                  placeholder="Legenda para redes sociais com hashtags"
+                />
+              </div>
+
+              {/* Prazo */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Prazo
+                </label>
+                <input
+                  type="date"
+                  value={editForm.prazo || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, prazo: e.target.value }))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                />
+              </div>
+
+              {/* Canais */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Canais de Distribuição
+                </label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {['Instagram', 'TikTok', 'YouTube', 'Facebook', 'LinkedIn', 'Twitter', 'Stories', 'Reels'].map(canal => (
+                    <label key={canal} className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={(editForm.canais || []).includes(canal)}
+                        onChange={(e) => handleCanaisChange(canal, e.target.checked)}
+                        className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                      />
+                      <span className="text-sm text-gray-700">{canal}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-4 mt-8 pt-6 border-t border-gray-200">
+              <button
+                onClick={closeEditModal}
+                className="px-6 py-3 text-gray-600 hover:text-gray-800 font-medium"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={editLoading}
+                className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors flex items-center space-x-2"
+              >
+                {editLoading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                <span>{editLoading ? 'Salvando...' : 'Salvar Alterações'}</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -505,7 +822,8 @@ export function IdeasPendentesPage() {
                   <div>
                     <label className="text-sm font-medium text-gray-500 uppercase tracking-wide">Prioridade</label>
                     <span className={`inline-block mt-1 px-3 py-1 rounded-full text-sm font-medium border ${getPriorityColor(selectedIdeia.prioridade)}`}>
-                      {selectedIdeia.prioridade}
+                      {selectedIdeia.prioridade === 'HIGH' ? '🔴 Alta' : 
+                       selectedIdeia.prioridade === 'MEDIUM' ? '🟡 Média' : '🟢 Baixa'}
                     </span>
                   </div>
                 </div>
