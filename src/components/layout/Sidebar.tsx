@@ -29,6 +29,7 @@ const menuItems = [
   { to: '/biblioteca', icon: Archive, label: 'Biblioteca', description: 'Conteúdos publicados' },
   { to: '/ideias', icon: Lightbulb, label: 'Ideias', description: 'Transformar ideias em pautas' },
   { to: '/importar', icon: Upload, label: 'Importar OS', description: 'Importar de arquivos com IA' },
+  { to: '/ideias-pendentes', icon: CheckCircle, label: 'Aprovar Ideias', description: 'Aprovar ideias importadas' },
   { to: '/tendencias', icon: TrendingUp, label: 'Tendências', description: 'Análise de performance e sugestões' },
   { to: '/auditoria', icon: BarChart3, label: 'Inteligência', description: 'Auditoria estratégica e reaproveitamento' },
   { to: '/relatorios', icon: BarChart3, label: 'Relatórios', description: 'Métricas e análises' },

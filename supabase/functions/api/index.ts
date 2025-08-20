@@ -838,6 +838,237 @@ Deno.serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // GET /ideias - List ideias with filters
+    if (effectivePath === '/ideias' && req.method === 'GET') {
+      const url = new URL(req.url);
+      const status = url.searchParams.get('status');
+      const marca = url.searchParams.get('marca');
+
+      let query = supabaseClient
+        .from('ideias')
+        .select(`
+          *,
+          aprovada_por_user:users!ideias_aprovada_por_fkey(id, nome, papel),
+          rejeitada_por_user:users!ideias_rejeitada_por_fkey(id, nome, papel),
+          created_by_user:users!ideias_created_by_fkey(id, nome, papel),
+          os_criada:ordens_de_servico!ideias_os_criada_id_fkey(id, titulo, status)
+        `)
+        .order('criado_em', { ascending: false });
+
+      // Apply filters
+      if (status) {
+        query = query.eq('status', status);
+      }
+      if (marca) {
+        query = query.eq('marca', marca);
+      }
+
+      const { data: ideias, error } = await query;
+
+      if (error) {
+        return new Response(
+          JSON.stringify({ error: error.message }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify(ideias || []),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // POST /ideias/:id/approve - Approve ideia and create OS
+    if (effectivePath.startsWith('/ideias/') && effectivePath.includes('/approve') && req.method === 'POST') {
+      const ideiaId = pathParts[1];
+      
+      // Check if user can approve
+      if (!currentUser?.pode_aprovar) {
+        return new Response(
+          JSON.stringify({ error: 'Usuário não tem permissão para aprovar ideias' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Get ideia details
+      const { data: ideia, error: ideiaError } = await supabaseClient
+        .from('ideias')
+        .select('*')
+        .eq('id', ideiaId)
+        .single();
+
+      if (ideiaError || !ideia) {
+        return new Response(
+          JSON.stringify({ error: 'Ideia não encontrada' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (ideia.status !== 'PENDENTE') {
+        return new Response(
+          JSON.stringify({ error: 'Ideia já foi processada' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Create OS from ideia
+      const osData = {
+        titulo: ideia.titulo,
+        descricao: ideia.descricao || null,
+        marca: ideia.marca,
+        objetivo: ideia.objetivo,
+        tipo: ideia.tipo,
+        status: 'ROTEIRO',
+        prioridade: ideia.prioridade,
+        gancho: ideia.gancho || null,
+        cta: ideia.cta || null,
+        script_text: ideia.script_text || null,
+        legenda: ideia.legenda || null,
+        canais: ideia.canais || [],
+        midia_bruta_links: ideia.raw_media_links || [],
+        categorias_criativos: ideia.categorias_criativos || [],
+        prazo: ideia.prazo ? new Date(ideia.prazo).toISOString().split('T')[0] : null,
+        org_id: currentUser?.org_id || null,
+        created_by: currentUser?.id || null
+      };
+
+      const { data: newOS, error: osError } = await supabaseClient
+        .from('ordens_de_servico')
+        .insert(osData)
+        .select('id, titulo')
+        .single();
+
+      if (osError) {
+        return new Response(
+          JSON.stringify({ error: osError.message }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Update ideia status
+      const { error: updateError } = await supabaseClient
+        .from('ideias')
+        .update({
+          status: 'APROVADA',
+          aprovada_por: currentUser.id,
+          os_criada_id: newOS.id,
+          atualizado_em: new Date().toISOString()
+        })
+        .eq('id', ideiaId);
+
+      if (updateError) {
+        return new Response(
+          JSON.stringify({ error: updateError.message }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Log approval and OS creation
+      await supabaseClient.from('logs_evento').insert([
+        {
+          os_id: null,
+          user_id: currentUser.id,
+          acao: 'APROVAR',
+          detalhe: `Ideia aprovada: ${ideia.titulo}`,
+          timestamp: new Date().toISOString()
+        },
+        {
+          os_id: newOS.id,
+          user_id: currentUser.id,
+          acao: 'CRIAR',
+          detalhe: `OS criada a partir de ideia: ${newOS.titulo}`,
+          timestamp: new Date().toISOString()
+        }
+      ]);
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          ideia: { ...ideia, status: 'APROVADA', os_criada_id: newOS.id },
+          os_criada: newOS 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // POST /ideias/:id/reject - Reject ideia
+    if (effectivePath.startsWith('/ideias/') && effectivePath.includes('/reject') && req.method === 'POST') {
+      const ideiaId = pathParts[1];
+      const body = await req.json();
+      const { motivo } = body;
+      
+      // Check if user can approve (same permission for reject)
+      if (!currentUser?.pode_aprovar) {
+        return new Response(
+          JSON.stringify({ error: 'Usuário não tem permissão para rejeitar ideias' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (!motivo) {
+        return new Response(
+          JSON.stringify({ error: 'Motivo da rejeição é obrigatório' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Get ideia details
+      const { data: ideia, error: ideiaError } = await supabaseClient
+        .from('ideias')
+        .select('*')
+        .eq('id', ideiaId)
+        .single();
+
+      if (ideiaError || !ideia) {
+        return new Response(
+          JSON.stringify({ error: 'Ideia não encontrada' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (ideia.status !== 'PENDENTE') {
+        return new Response(
+          JSON.stringify({ error: 'Ideia já foi processada' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Update ideia status
+      const { data: updatedIdeia, error: updateError } = await supabaseClient
+        .from('ideias')
+        .update({
+          status: 'REJEITADA',
+          rejeitada_por: currentUser.id,
+          motivo_rejeicao: motivo,
+          atualizado_em: new Date().toISOString()
+        })
+        .eq('id', ideiaId)
+        .select('*')
+        .single();
+
+      if (updateError) {
+        return new Response(
+          JSON.stringify({ error: updateError.message }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Log rejection
+      await supabaseClient.from('logs_evento').insert({
+        os_id: null,
+        user_id: currentUser.id,
+        acao: 'REPROVAR',
+        detalhe: `Ideia rejeitada: ${ideia.titulo} - Motivo: ${motivo}`,
+        timestamp: new Date().toISOString()
+      });
+
+      return new Response(
+        JSON.stringify(updatedIdeia),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // GET /users/me - Get current user info (alias for /)
     if (effectivePath === '/users/me' && req.method === 'GET') {
       if (!currentUser) {

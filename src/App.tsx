@@ -46,6 +46,7 @@ function App() {
               <Route path="auditoria" element={<AuditoriaConteudoPage />} />
               <Route path="usuarios" element={<UsuariosPage />} />
               <Route path="importar" element={<ImportarOSPage />} />
+              <Route path="ideias-pendentes" element={<IdeasPendentesPage />} />
             </Route>
           </Routes>
         </ProtectedRoute>

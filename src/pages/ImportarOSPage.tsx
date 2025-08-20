@@ -229,7 +229,7 @@ export function ImportarOSPage() {
       if (result.errors.length > 0) {
         showToast.warning(`${result.created} OS criadas com sucesso! ${result.errors.length} falharam.`);
       } else {
-        showToast.success(`${result.created} OS criadas com sucesso!`);
+        showToast.success(`🚀 Perfeito! ${result.created} ideias enviadas para aprovação!`);
       }
     } catch (error) {
       console.error('Erro ao criar OS:', error);
@@ -517,7 +517,7 @@ CTA: Link na bio para agendar!`;
                 ) : (
                   <CheckCircle className="w-4 h-4" />
                 )}
-                <span>{loading ? 'Criando...' : `Criar ${parsedItems.length} OS`}</span>
+                <span>{loading ? 'Enviando...' : `Enviar ${parsedItems.length} Ideias para Aprovação`}</span>
               </button>
             </div>
           </div>
