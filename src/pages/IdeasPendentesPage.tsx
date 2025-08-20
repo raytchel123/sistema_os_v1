@@ -402,16 +402,6 @@ export function IdeasPendentesPage() {
                   {tab.count}
                 </span>
               )}
-              
-              {selectedIdeia.data_publicacao_prevista && (
-                <div>
-                  <label className="text-sm font-medium text-gray-500 uppercase tracking-wide">Data de Publicação</label>
-                  <p className="text-gray-700 mt-1 flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    {new Date(selectedIdeia.data_publicacao_prevista).toLocaleString('pt-BR')}
-                  </p>
-                </div>
-              )}
             </button>
           ))}
         </nav>
@@ -444,7 +434,8 @@ export function IdeasPendentesPage() {
                   <h3 className="font-semibold text-gray-900 text-lg line-clamp-2 flex-1">
                     {ideia.titulo}
                   </h3>
-                    {selectedIdeia.prioridade}
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getPriorityColor(ideia.prioridade)}`}>
+                    {ideia.prioridade}
                   </span>
                 </div>
                 
@@ -649,10 +640,23 @@ export function IdeasPendentesPage() {
                   onChange={(e) => setEditForm(prev => ({ ...prev, prioridade: e.target.value }))}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
                 >
-                  <option value="HIGH" className="text-red-600 font-medium">🔴 Alta</option>
-                  <option value="MEDIUM" className="text-yellow-600 font-medium">🟡 Média</option>
-                  <option value="LOW" className="text-green-600 font-medium">🟢 Baixa</option>
+                  <option value="HIGH">🔴 Alta</option>
+                  <option value="MEDIUM">🟡 Média</option>
+                  <option value="LOW">🟢 Baixa</option>
                 </select>
+              </div>
+
+              {/* Data de Publicação */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Data de Publicação
+                </label>
+                <input
+                  type="datetime-local"
+                  value={editForm.data_publicacao_prevista || ''}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, data_publicacao_prevista: e.target.value }))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                />
               </div>
 
               {/* Gancho */}
@@ -857,6 +861,16 @@ export function IdeasPendentesPage() {
                     <p className="text-gray-700 mt-1 flex items-center gap-2">
                       <Calendar className="w-4 h-4" />
                       {formatDate(selectedIdeia.prazo)}
+                    </p>
+                  </div>
+                )}
+
+                {selectedIdeia.data_publicacao_prevista && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-500 uppercase tracking-wide">Data de Publicação</label>
+                    <p className="text-gray-700 mt-1 flex items-center gap-2">
+                      <Calendar className="w-4 h-4" />
+                      {new Date(selectedIdeia.data_publicacao_prevista).toLocaleString('pt-BR')}
                     </p>
                   </div>
                 )}

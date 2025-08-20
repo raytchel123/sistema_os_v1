@@ -1273,6 +1273,7 @@ Deno.serve(async (req) => {
         objetivo: body.objetivo,
         tipo: body.tipo,
         prioridade: body.prioridade || 'MEDIUM',
+        data_publicacao_prevista: body.data_publicacao_prevista || null,
         gancho: body.gancho || null,
         cta: body.cta || null,
         script_text: body.script_text || null,
