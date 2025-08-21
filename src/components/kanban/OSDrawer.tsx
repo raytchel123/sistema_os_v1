@@ -1026,9 +1026,18 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
                   ) : (
                     <div className="space-y-4 max-h-96 overflow-y-auto">
                       {logs.map((log, index) => (
-                        <div key={log.id || index} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <div key={log.id || index} className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors">
                           <div className="flex-shrink-0">
-                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                              log.acao === 'CRIAR' ? 'bg-blue-100' :
+                              log.acao === 'MUDAR_STATUS' ? 'bg-green-100' :
+                              log.acao === 'ANEXAR_ASSET' ? 'bg-purple-100' :
+                              log.acao === 'REPROVAR' ? 'bg-red-100' :
+                              log.acao === 'APROVAR' ? 'bg-green-100' :
+                              log.acao === 'AGENDAR' ? 'bg-indigo-100' :
+                              log.acao === 'POSTAR' ? 'bg-green-100' :
+                              'bg-gray-100'
+                            }`}>
                               {log.acao === 'CRIAR' && <FileText className="w-4 h-4 text-blue-600" />}
                               {log.acao === 'MUDAR_STATUS' && <CheckCircle className="w-4 h-4 text-green-600" />}
                               {log.acao === 'ANEXAR_ASSET' && <Link className="w-4 h-4 text-purple-600" />}
@@ -1042,8 +1051,9 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
                           </div>
                           
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between">
-                              <p className="text-sm font-medium text-gray-900">
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex-1">
+                                <p className="text-sm font-semibold text-gray-900">
                                 {log.acao === 'CRIAR' && 'OS Criada'}
                                 {log.acao === 'MUDAR_STATUS' && 'Status Alterado'}
                                 {log.acao === 'ANEXAR_ASSET' && 'Asset Anexado'}
@@ -1052,22 +1062,99 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
                                 {log.acao === 'AGENDAR' && 'OS Agendada'}
                                 {log.acao === 'POSTAR' && 'OS Postada'}
                                 {!['CRIAR', 'MUDAR_STATUS', 'ANEXAR_ASSET', 'REPROVAR', 'APROVAR', 'AGENDAR', 'POSTAR'].includes(log.acao) && log.acao}
-                              </p>
+                                </p>
+                                
+                                {/* Extrair informações do detalhe */}
+                                {(() => {
+                                  try {
+                                    const detalheObj = JSON.parse(log.detalhe || '{}');
+                                    return (
+                                      <div className="mt-1 space-y-1">
+                                        {detalheObj.from_state && detalheObj.to_state && (
+                                          <div className="flex items-center space-x-2 text-xs">
+                                            <span className="text-gray-500">Status:</span>
+                                            <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(detalheObj.from_state)}`}>
+                                              {detalheObj.from_state}
+                                            </span>
+                                            <span className="text-gray-400">→</span>
+                                            <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(detalheObj.to_state)}`}>
+                                              {detalheObj.to_state}
+                                            </span>
+                                          </div>
+                                        )}
+                                        
+                                        {detalheObj.note && (
+                                          <div className="text-xs text-gray-600 bg-yellow-50 border border-yellow-200 rounded p-2 mt-2">
+                                            <span className="font-medium text-yellow-800">Motivo:</span> {detalheObj.note}
+                                          </div>
+                                        )}
+                                        
+                                        {detalheObj.reason && (
+                                          <div className="text-xs text-gray-600 bg-blue-50 border border-blue-200 rounded p-2 mt-2">
+                                            <span className="font-medium text-blue-800">Observação:</span> {detalheObj.reason}
+                                          </div>
+                                        )}
+                                        
+                                        {detalheObj.data_hora && (
+                                          <div className="text-xs text-gray-600">
+                                            <span className="font-medium">Agendado para:</span> {new Date(detalheObj.data_hora).toLocaleString('pt-BR')}
+                                          </div>
+                                        )}
+                                        
+                                        {detalheObj.plataforma && (
+                                          <div className="text-xs text-gray-600">
+                                            <span className="font-medium">Plataforma:</span> {detalheObj.plataforma}
+                                          </div>
+                                        )}
+                                        
+                                        {detalheObj.action && (
+                                          <div className="text-xs text-gray-600">
+                                            <span className="font-medium">Ação:</span> {detalheObj.action}
+                                          </div>
+                                        )}
+                                        
+                                        {detalheObj.titulo && log.acao === 'DELETE' && (
+                                          <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded p-2 mt-2">
+                                            <span className="font-medium">OS Removida:</span> {detalheObj.titulo}
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  } catch {
+                                    // Se não for JSON válido, mostrar como texto simples
+                                    return null;
+                                  }
+                                })()}
+                              </div>
+                              
                               <span className="text-xs text-gray-500">
                                 {new Date(log.timestamp).toLocaleString('pt-BR')}
                               </span>
                             </div>
                             
                             {log.detalhe && (
-                              <p className="text-sm text-gray-600 mt-1">
-                                {log.detalhe}
-                              </p>
+                              <div className="mt-2">
+                                {(() => {
+                                  try {
+                                    // Tentar parsear como JSON primeiro
+                                    JSON.parse(log.detalhe);
+                                    return null; // Se for JSON, já foi processado acima
+                                  } catch {
+                                    // Se não for JSON, mostrar como texto simples
+                                    return (
+                                      <p className="text-sm text-gray-600 bg-gray-100 rounded p-2 border border-gray-200">
+                                        {log.detalhe}
+                                      </p>
+                                    );
+                                  }
+                                })()}
+                              </div>
                             )}
                             
                             {log.user && (
-                              <div className="flex items-center mt-2">
+                              <div className="flex items-center mt-3 pt-2 border-t border-gray-200">
                                 <User className="w-3 h-3 text-gray-400 mr-1" />
-                                <span className="text-xs text-gray-500">
+                                <span className="text-xs text-gray-600 font-medium">
                                   {log.user.nome} ({log.user.papel})
                                 </span>
                               </div>
