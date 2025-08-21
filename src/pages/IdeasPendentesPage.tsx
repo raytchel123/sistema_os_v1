@@ -490,7 +490,7 @@ export function IdeasPendentesPage() {
                   )}
                 </div>
                 
-                <div className="flex space-x-2">
+<div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => openDetailsModal(ideia)}
                     className="flex-1 border border-purple-600 text-purple-600 py-2 px-3 rounded-lg hover:bg-purple-50 transition-colors flex items-center justify-center text-sm font-medium"
