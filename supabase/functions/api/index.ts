@@ -482,6 +482,76 @@ Deno.serve(async (req) => {
       );
     }
 
+    // DELETE /ordens/:id - Delete OS
+    if (effectivePath.startsWith('/ordens/') && req.method === 'DELETE' && pathParts.length === 2) {
+      const osId = pathParts[1];
+      
+      if (!currentUser) {
+        return new Response(
+          JSON.stringify({ error: 'Usuário não autenticado' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Check if user can approve (only approvers can delete)
+      if (!currentUser.pode_aprovar) {
+        return new Response(
+          JSON.stringify({ error: 'Usuário não tem permissão para remover OS' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Check if OS exists and belongs to user's org
+      const { data: existingOS, error: fetchError } = await supabaseClient
+        .from('ordens_de_servico')
+        .select('id, titulo, org_id')
+        .eq('id', osId)
+        .single();
+
+      if (fetchError || !existingOS) {
+        return new Response(
+          JSON.stringify({ error: 'OS não encontrada' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Check org isolation
+      if (existingOS.org_id && currentUser.org_id && existingOS.org_id !== currentUser.org_id) {
+        return new Response(
+          JSON.stringify({ error: 'OS pertence a outra organização' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Delete OS (cascade will handle related records)
+      const { error: deleteError } = await supabaseClient
+        .from('ordens_de_servico')
+        .delete()
+        .eq('id', osId);
+
+      if (deleteError) {
+        console.error('Error deleting OS:', deleteError);
+        return new Response(
+          JSON.stringify({ error: 'Erro ao remover OS' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Log deletion
+      await supabaseClient.from('logs_evento').insert({
+        os_id: osId,
+        user_id: currentUser.id,
+        acao: 'REMOVER',
+        detalhe: `OS "${existingOS.titulo}" removida pelo usuário`,
+        timestamp: new Date().toISOString()
+      });
+
+      return new Response(
+        JSON.stringify({ success: true, message: 'OS removida com sucesso' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // PUT /ordens/:id - Update OS
     if (effectivePath.startsWith('/ordens/') && req.method === 'PUT' && pathParts.length === 2) {
       const osId = pathParts[1];
