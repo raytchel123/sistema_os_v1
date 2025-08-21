@@ -496,7 +496,7 @@ export function IdeasPendentesPage() {
                     className="flex-1 border border-purple-600 text-purple-600 py-2 px-3 rounded-lg hover:bg-purple-50 transition-colors flex items-center justify-center text-sm font-medium"
                   >
                     <Eye className="w-4 h-4 mr-2" />
-                    Ver Detalhes
+                    Detalhes
                   </button>
                   
                   {ideia.status === 'PENDENTE' && userCanApprove && (
