@@ -426,6 +426,9 @@ export function ListaPage() {
                       {getSortIcon('criado_em')}
                     </div>
                   </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Canais
+                  </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Ações
                   </th>
@@ -464,6 +467,23 @@ export function ListaPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(os.criado_em).toLocaleDateString('pt-BR')}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex flex-wrap gap-1">
+                        {(os.canais || []).slice(0, 3).map((canal, index) => (
+                          <span key={index} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            {canal}
+                          </span>
+                        ))}
+                        {(os.canais || []).length > 3 && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            +{(os.canais || []).length - 3}
+                          </span>
+                        )}
+                        {(!os.canais || os.canais.length === 0) && (
+                          <span className="text-xs text-gray-400 italic">Nenhum canal</span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
