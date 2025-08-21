@@ -18,6 +18,8 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
   const [brands, setBrands] = useState<any[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
   const [brandsLoading, setBrandsLoading] = useState(true);
+  const [logs, setLogs] = useState<any[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
   const [formData, setFormData] = useState({
     titulo: '',
     descricao: '',
@@ -46,8 +48,40 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
     if (isOpen) {
       fetchUsers();
       fetchBrands();
+      if (ordem?.id) {
+        fetchLogs();
+      }
     }
   }, [isOpen]);
+
+  const fetchLogs = async () => {
+    if (!ordem?.id) return;
+    
+    try {
+      setLogsLoading(true);
+      const { data: { session } } = await (await import('../../lib/supabase')).supabase.auth.getSession();
+      if (!session) return;
+
+      const headers = {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await fetch(`${apiUrl}/api/ordens/${ordem.id}/logs`, { headers });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setLogs(data);
+        console.log('📋 Logs loaded for OS:', data);
+      } else {
+        console.error('❌ Error loading logs:', response.status);
+      }
+    } catch (err) {
+      console.error('Erro ao carregar logs:', err);
+    } finally {
+      setLogsLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (ordem && isOpen) {
@@ -969,6 +1003,82 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
                 </div>
               )}
             </div>
+              {/* Histórico de Eventos */}
+              <div className="bg-white rounded-lg border border-gray-200">
+                <div className="p-4 border-b border-gray-200">
+                  <h3 className="font-medium text-gray-900 flex items-center">
+                    <Clock className="w-5 h-5 mr-2 text-blue-600" />
+                    Histórico de Eventos
+                  </h3>
+                </div>
+                
+                <div className="p-4">
+                  {logsLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                      <span className="ml-2 text-gray-600">Carregando histórico...</span>
+                    </div>
+                  ) : logs.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Clock className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                      <p className="text-gray-500">Nenhum evento registrado</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4 max-h-96 overflow-y-auto">
+                      {logs.map((log, index) => (
+                        <div key={log.id || index} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                          <div className="flex-shrink-0">
+                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                              {log.acao === 'CRIAR' && <FileText className="w-4 h-4 text-blue-600" />}
+                              {log.acao === 'MUDAR_STATUS' && <CheckCircle className="w-4 h-4 text-green-600" />}
+                              {log.acao === 'ANEXAR_ASSET' && <Link className="w-4 h-4 text-purple-600" />}
+                              {log.acao === 'REPROVAR' && <XCircle className="w-4 h-4 text-red-600" />}
+                              {log.acao === 'APROVAR' && <CheckCircle className="w-4 h-4 text-green-600" />}
+                              {log.acao === 'AGENDAR' && <Calendar className="w-4 h-4 text-indigo-600" />}
+                              {log.acao === 'POSTAR' && <CheckCircle className="w-4 h-4 text-green-600" />}
+                              {!['CRIAR', 'MUDAR_STATUS', 'ANEXAR_ASSET', 'REPROVAR', 'APROVAR', 'AGENDAR', 'POSTAR'].includes(log.acao) && 
+                                <Clock className="w-4 h-4 text-gray-600" />}
+                            </div>
+                          </div>
+                          
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <p className="text-sm font-medium text-gray-900">
+                                {log.acao === 'CRIAR' && 'OS Criada'}
+                                {log.acao === 'MUDAR_STATUS' && 'Status Alterado'}
+                                {log.acao === 'ANEXAR_ASSET' && 'Asset Anexado'}
+                                {log.acao === 'REPROVAR' && 'OS Reprovada'}
+                                {log.acao === 'APROVAR' && 'OS Aprovada'}
+                                {log.acao === 'AGENDAR' && 'OS Agendada'}
+                                {log.acao === 'POSTAR' && 'OS Postada'}
+                                {!['CRIAR', 'MUDAR_STATUS', 'ANEXAR_ASSET', 'REPROVAR', 'APROVAR', 'AGENDAR', 'POSTAR'].includes(log.acao) && log.acao}
+                              </p>
+                              <span className="text-xs text-gray-500">
+                                {new Date(log.timestamp).toLocaleString('pt-BR')}
+                              </span>
+                            </div>
+                            
+                            {log.detalhe && (
+                              <p className="text-sm text-gray-600 mt-1">
+                                {log.detalhe}
+                              </p>
+                            )}
+                            
+                            {log.user && (
+                              <div className="flex items-center mt-2">
+                                <User className="w-3 h-3 text-gray-400 mr-1" />
+                                <span className="text-xs text-gray-500">
+                                  {log.user.nome} ({log.user.papel})
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
           )}
         </div>
       </div>
