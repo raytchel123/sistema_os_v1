@@ -706,7 +706,16 @@ Deno.serve(async (req) => {
         os_id: osId,
         user_id: currentUser?.id || null,
         acao: 'REPROVAR',
-        detalhe: `OS reprovada: ${motivo}`,
+        detalhe: JSON.stringify({
+          acao: 'REPROVAR_OS',
+          titulo: os.titulo,
+          status_anterior: os.status,
+          status_novo: 'REVISAO',
+          reprovado_por: currentUser?.nome || 'Sistema',
+          papel_reprovador: currentUser?.papel || 'REVISOR',
+          motivo_reprovacao: body.motivo,
+          observacoes: `OS retornada para revisão devido a: ${body.motivo}`
+        }),
         timestamp: new Date().toISOString()
       });
 
