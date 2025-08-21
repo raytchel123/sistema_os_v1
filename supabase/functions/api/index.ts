@@ -500,12 +500,15 @@ Deno.serve(async (req) => {
         canais: body.canais || [],
         gancho: body.gancho || null,
         cta: body.cta || null,
+        informacoes_adicionais: body.informacoes_adicionais,
+
         midia_bruta_links: body.midia_bruta_links || body.raw_media_links || [],
         criativos_prontos_links: body.criativos_prontos_links || body.final_media_links || [],
         categorias_criativos: body.categorias_criativos || [],
         responsaveis: body.responsaveis || {},
         prazo: body.prazo ? new Date(body.prazo).toISOString().split('T')[0] : null,
         script_text: body.script_text || null,
+        legenda: body.legenda || null,
         legenda: body.legenda || null,
         atualizado_em: new Date().toISOString()
       };
