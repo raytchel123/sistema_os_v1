@@ -31,7 +31,6 @@ const menuItems = [
   { to: '/importar', icon: Upload, label: 'Importar OS', description: 'Importar de arquivos com IA' },
   { to: '/ideias-pendentes', icon: CheckCircle, label: 'Aprovar Ideias', description: 'Aprovar ideias importadas' },
   { to: '/tendencias', icon: TrendingUp, label: 'Tendências', description: 'Análise de performance e sugestões' },
-  { to: '/auditoria', icon: BarChart3, label: 'Inteligência', description: 'Auditoria estratégica e reaproveitamento' },
   { to: '/relatorios', icon: BarChart3, label: 'Relatórios', description: 'Métricas e análises' },
   { to: '/settings', icon: Settings, label: 'Configurações', description: 'Providers e perfis' },
   { to: '/usuarios', icon: Users, label: 'Usuários', description: 'Gerenciar equipe' },
@@ -133,22 +132,22 @@ export function Sidebar() {
   };
   
   // Debug: Log current state
-  console.log('🎯 SIDEBAR STATE:', {
-    userEmail: user?.email,
-    userCanApprove,
-    userRole,
-    debugInfo,
-    totalMenuItems: menuItems.length,
-    approvalMenuItems: approvalMenuItems.length,
-    willShowApprovalMenu: userCanApprove
-  });
+  // console.log('🎯 SIDEBAR STATE:', {
+  //   userEmail: user?.email,
+  //   userCanApprove,
+  //   userRole,
+  //   debugInfo,
+  //   totalMenuItems: menuItems.length,
+  //   approvalMenuItems: approvalMenuItems.length,
+  //   willShowApprovalMenu: userCanApprove
+  // });
   const allMenuItems = [
     ...menuItems,
     ...(userCanApprove ? approvalMenuItems : [])
   ];
   
-  console.log('📋 FINAL MENU ITEMS:', allMenuItems.length, 'items');
-  console.log('✅ Approval menu included:', userCanApprove ? 'YES' : 'NO');
+  // console.log('📋 FINAL MENU ITEMS:', allMenuItems.length, 'items');
+  // console.log('✅ Approval menu included:', userCanApprove ? 'YES' : 'NO');
   return (
     <>
       {/* Mobile menu button */}
