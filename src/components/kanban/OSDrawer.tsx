@@ -31,12 +31,14 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
     cta: '',
     script_text: '',
     legenda: '',
+    informacoes_adicionais: '',
     raw_media_links: [] as string[],
     final_media_links: [] as string[],
     categorias_criativos: [] as string[],
     responsaveis: {},
     prazo: ''
   });
+  const [showAdditionalInfo, setShowAdditionalInfo] = useState(false);
   const { user } = useAuth();
 
   const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
@@ -68,6 +70,7 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
         cta: ordem?.cta || '',
         script_text: ordem?.script_text || '',
         legenda: ordem?.legenda || '',
+        informacoes_adicionais: ordem?.informacoes_adicionais || '',
         raw_media_links: ordem?.midia_bruta_links || ordem?.raw_media_links || [],
         final_media_links: ordem?.criativos_prontos_links || ordem?.final_media_links || [],
         categorias_criativos: ordem?.categorias_criativos || [],
@@ -171,6 +174,7 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
         cta: formData.cta || null,
         script_text: formData.script_text || null,
         legenda: formData.legenda || null,
+        informacoes_adicionais: formData.informacoes_adicionais || null,
         midia_bruta_links: formData.raw_media_links.filter(link => link.trim()),
         criativos_prontos_links: formData.final_media_links.filter(link => link.trim()),
         categorias_criativos: formData.categorias_criativos,
@@ -812,6 +816,38 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
                   rows={8}
                   placeholder="Digite a legenda para as redes sociais..."
                 />
+              </div>
+              
+              {/* Informações Adicionais */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Informações Adicionais
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowAdditionalInfo(!showAdditionalInfo)}
+                    className="bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-1 text-sm"
+                  >
+                    <span className="text-lg">+</span>
+                    <span>{showAdditionalInfo ? 'Ocultar' : 'Adicionar Info'}</span>
+                  </button>
+                </div>
+                
+                {showAdditionalInfo && (
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <textarea
+                      value={formData.informacoes_adicionais}
+                      onChange={(e) => setFormData(prev => ({ ...prev, informacoes_adicionais: e.target.value }))}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent resize-none"
+                      rows={6}
+                      placeholder="Digite informações adicionais sobre o roteiro, observações especiais, referências, etc..."
+                    />
+                    <p className="text-xs text-gray-500 mt-2">
+                      Use este campo para adicionar observações especiais, referências, instruções específicas para a equipe, etc.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )}
