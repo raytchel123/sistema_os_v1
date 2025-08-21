@@ -506,6 +506,7 @@ Deno.serve(async (req) => {
         prazo: body.prazo ? new Date(body.prazo).toISOString().split('T')[0] : null,
         script_text: body.script_text || null,
         legenda: body.legenda || null,
+        informacoes_adicionais: body.informacoes_adicionais || null,
         atualizado_em: new Date().toISOString()
       };
 
