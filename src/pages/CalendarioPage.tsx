@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Calendar, ChevronLeft, ChevronRight, Filter, Clock, AlertTriangle, Upload } from 'lucide-react';
-import { OSDrawer } from '../components/kanban/OSDrawer';
+import OSDrawer from '../components/kanban/OSDrawer';
 import { CronogramaUpload } from '../components/cronograma/CronogramaUpload';
 import { useCronograma } from '../hooks/useCronograma';
 import { showToast } from '../components/ui/Toast';
