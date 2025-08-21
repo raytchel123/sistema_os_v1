@@ -49,7 +49,7 @@ export function useOrdens() {
           revisao: safeNum(ordensData?.filter((o: any) => o.status === 'REVISAO')?.length),
           aprovacao: safeNum(ordensData?.filter((o: any) => o.status === 'APROVACAO')?.length),
           agendamento: safeNum(ordensData?.filter((o: any) => o.status === 'AGENDAMENTO')?.length),
-          postado: safeNum(ordensData?.filter((o: any) => o.status === 'PUBLICADO')?.length),
+          publicado: safeNum(ordensData?.filter((o: any) => o.status === 'PUBLICADO')?.length),
           alta_prioridade: safeNum(ordensData?.filter((o: any) => o.prioridade === 'HIGH')?.length),
           atrasadas: safeNum(ordensData?.filter((o: any) => 
             o.sla_atual && !isNaN(new Date(o.sla_atual).getTime()) && new Date(o.sla_atual) < new Date() && o.status !== 'POSTADO'
