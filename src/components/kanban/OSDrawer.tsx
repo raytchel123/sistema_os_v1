@@ -31,6 +31,7 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
     cta: '',
     script_text: '',
     legenda: '',
+    informacoes_adicionais: '',
     raw_media_links: [] as string[],
     final_media_links: [] as string[],
     categorias_criativos: [] as string[],
@@ -68,6 +69,7 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
         cta: ordem?.cta || '',
         script_text: ordem?.script_text || '',
         legenda: ordem?.legenda || '',
+        informacoes_adicionais: ordem?.informacoes_adicionais || '',
         raw_media_links: ordem?.midia_bruta_links || ordem?.raw_media_links || [],
         final_media_links: ordem?.criativos_prontos_links || ordem?.final_media_links || [],
         categorias_criativos: ordem?.categorias_criativos || [],
@@ -171,6 +173,7 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
         cta: formData.cta || null,
         script_text: formData.script_text || null,
         legenda: formData.legenda || null,
+        informacoes_adicionais: formData.informacoes_adicionais || null,
         midia_bruta_links: formData.raw_media_links.filter(link => link.trim()),
         criativos_prontos_links: formData.final_media_links.filter(link => link.trim()),
         categorias_criativos: formData.categorias_criativos,
@@ -812,6 +815,22 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
                   rows={8}
                   placeholder="Digite a legenda para as redes sociais..."
                 />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Informações Adicionais
+                </label>
+                <textarea
+                  value={formData.informacoes_adicionais}
+                  onChange={(e) => setFormData(prev => ({ ...prev, informacoes_adicionais: e.target.value }))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent resize-none bg-gray-50"
+                  rows={6}
+                  placeholder="Adicione informações extras, observações, briefings específicos ou qualquer detalhe importante para a produção..."
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Campo opcional para informações complementares que podem ajudar na produção
+                </p>
               </div>
             </div>
           )}
