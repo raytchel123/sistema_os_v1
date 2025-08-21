@@ -406,11 +406,18 @@ Deno.serve(async (req) => {
       const { data: ordem, error } = await supabaseClient
         .from('ordens_de_servico')
         .select(`
-          *,
+      const { data: existingOS, error: fetchError } = await supabaseClient
           responsavel:users!ordens_de_servico_responsavel_atual_fkey(id, nome, papel)
         `)
         .eq('id', osId)
         .single();
+
+      if (fetchError || !existingOS) {
+        return new Response(
+          JSON.stringify({ error: 'OS não encontrada' }),
+          { status: 404, headers: corsHeaders }
+        );
+      }
 
       if (error) {
         return new Response(
