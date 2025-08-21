@@ -497,7 +497,7 @@ export function ListaPage() {
                             title="Remover OS"
                           >
                             <Trash2 className="w-3 h-3 mr-1" />
-                            Remover
+                            
                           </button>
                         )}
                         <button
