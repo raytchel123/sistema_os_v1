@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { List, Filter, Search, Plus, Edit, CheckCircle, XCircle, ChevronUp, ChevronDown } from 'lucide-react';
+import { List, Filter, Search, Plus, Edit, CheckCircle, XCircle, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
 import { OSDrawer } from '../components/kanban/OSDrawer';
 import { useAuth } from '../contexts/AuthContext';
 import { showToast } from '../components/ui/Toast';
@@ -202,6 +202,43 @@ export function ListaPage() {
       }
     } catch (err) {
       showToast.error(`Erro ao reprovar OS: ${err instanceof Error ? err.message : 'Erro de conexão'}`);
+    } finally {
+      showToast.dismiss(loadingToast);
+      setActionLoading(null);
+    }
+  };
+
+  const handleRemove = async (osId: string, titulo: string) => {
+    if (!window.confirm(`Tem certeza que deseja remover a OS "${titulo}"? Esta ação não pode ser desfeita.`)) {
+      return;
+    }
+
+    setActionLoading(osId);
+    const loadingToast = showToast.loading('Removendo OS...');
+    
+    try {
+      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
+      if (!session) return;
+
+      const headers = {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await fetch(`${apiUrl}/api/ordens/${osId}`, {
+        method: 'DELETE',
+        headers
+      });
+
+      if (response.ok) {
+        showToast.success('OS removida com sucesso!');
+        fetchOrdens(); // Refresh list
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        showToast.error(`Erro ao remover OS (${response.status}): ${errorData.error || 'Erro desconhecido'}`);
+      }
+    } catch (err) {
+      showToast.error(`Erro ao remover OS: ${err instanceof Error ? err.message : 'Erro de conexão'}`);
     } finally {
       showToast.dismiss(loadingToast);
       setActionLoading(null);
@@ -451,6 +488,17 @@ export function ListaPage() {
                               Reprovar
                             </button>
                           </>
+                        )}
+                        {userCanApprove && (
+                          <button
+                            onClick={() => handleRemove(os.id, os.titulo)}
+                            disabled={actionLoading === os.id}
+                            className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 disabled:opacity-50 flex items-center text-xs"
+                            title="Remover OS"
+                          >
+                            <Trash2 className="w-3 h-3 mr-1" />
+                            Remover
+                          </button>
                         )}
                         <button
                           onClick={() => openOSDrawer(os.id)}
