@@ -572,25 +572,7 @@ Deno.serve(async (req) => {
         os_id: osId,
         user_id: currentUser?.id || null,
         acao: 'MUDAR_STATUS',
-        detalhe: JSON.stringify({
-          titulo: updatedOS.titulo,
-          status_anterior: existingOS.status,
-          status_novo: updatedOS.status,
-          marca: updatedOS.marca,
-          prioridade: updatedOS.prioridade,
-          responsavel_anterior: existingOS.responsavel_atual,
-          responsavel_novo: updatedOS.responsavel_atual,
-          data_publicacao_anterior: existingOS.data_publicacao_prevista,
-          data_publicacao_nova: updatedOS.data_publicacao_prevista,
-          prazo_anterior: existingOS.prazo,
-          prazo_novo: updatedOS.prazo,
-          campos_alterados: Object.keys(updateData).filter(key => 
-            existingOS[key] !== updatedOS[key]
-          ),
-          observacao: `Status alterado de ${existingOS.status} para ${updatedOS.status}`
-        }),
-        timestamp: new Date().toISOString()
-      });
+        detalhe: 'OS atualizada: '
 
       return new Response(
         JSON.stringify(updatedOS),
