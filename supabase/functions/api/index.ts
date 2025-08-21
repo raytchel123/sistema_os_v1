@@ -572,7 +572,7 @@ Deno.serve(async (req) => {
         os_id: osId,
         user_id: currentUser?.id || null,
         acao: 'MUDAR_STATUS',
-        detalhe: `OS atualizada - Status: ${body.status} | Prioridade: ${body.prioridade}`
+        detalhe: `OS atualizada - Status:`
         timestamp: new Date().toISOString()
       });
 
