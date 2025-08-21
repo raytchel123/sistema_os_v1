@@ -393,6 +393,17 @@ export async function deleteOS(req: Request, osId: string) {
       titulo: os.titulo 
     });
 
+    // Limpar referências na tabela ideias antes de deletar a OS
+    const { error: ideiasError } = await admin
+      .from('ideias')
+      .update({ os_criada_id: null })
+      .eq('os_criada_id', osId);
+
+    if (ideiasError) {
+      console.error('Erro ao limpar referências em ideias:', ideiasError);
+      return err('DB_UPDATE_FAILED', `Erro ao limpar referências: ${ideiasError.message}`, 500);
+    }
+
     // Remover a OS (cascade delete cuidará dos relacionamentos)
     const { error: deleteError } = await admin
       .from('ordens_de_servico')
