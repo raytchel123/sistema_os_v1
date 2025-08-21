@@ -1003,7 +1003,7 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
                 </div>
               )}
             </div>
-              {/* Histórico de Eventos */}
+              ,
               <div className="bg-white rounded-lg border border-gray-200">
                 <div className="p-4 border-b border-gray-200">
                   <h3 className="font-medium text-gray-900 flex items-center">
