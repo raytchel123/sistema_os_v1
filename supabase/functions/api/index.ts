@@ -424,6 +424,33 @@ Deno.serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // GET /ordens/:id/logs - Get logs for specific OS
+    if (effectivePath.startsWith('/ordens/') && effectivePath.endsWith('/logs') && req.method === 'GET' && pathParts.length === 3) {
+      const osId = pathParts[1];
+      
+      const { data: logs, error } = await supabaseClient
+        .from('logs_evento')
+        .select(`
+          *,
+          user:users(id, nome, papel)
+        `)
+        .eq('os_id', osId)
+        .order('timestamp', { ascending: false });
+
+      if (error) {
+        return new Response(
+          JSON.stringify({ error: error.message }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify(logs || []),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // POST /ordens - Create new OS
     if (effectivePath === '/ordens' && req.method === 'POST') {
       const body = await req.json();
