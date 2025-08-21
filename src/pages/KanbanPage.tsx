@@ -97,8 +97,8 @@ export function KanbanPage() {
               <div className="flex items-center">
                 <CheckCircle className="w-5 h-5 text-purple-600 mr-2" />
                 <div>
-                  <p className="text-sm text-gray-600">Em Aprovação</p>
-                  <p className="text-2xl font-bold text-gray-900">{safeNum(stats.aprovacao)}</p>
+                  <p className="text-sm text-gray-600">Em Revisão</p>
+                  <p className="text-2xl font-bold text-gray-900">{safeNum(stats.revisao)}</p>
                 </div>
               </div>
             </div>
