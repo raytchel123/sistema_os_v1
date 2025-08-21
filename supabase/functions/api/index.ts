@@ -572,7 +572,9 @@ Deno.serve(async (req) => {
         os_id: osId,
         user_id: currentUser?.id || null,
         acao: 'MUDAR_STATUS',
-        detalhe: 'OS atualizada: '
+        detalhe: 'OS atualizada: ',
+        timestamp: new Date().toISOString()
+      });
 
       return new Response(
         JSON.stringify(updatedOS),
