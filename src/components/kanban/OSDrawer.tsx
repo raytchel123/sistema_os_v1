@@ -10,7 +10,7 @@ interface OSDrawerProps {
   onUpdate: () => void;
 }
 
-export default function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
+export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
   const [loading, setLoading] = useState(false);
   const [approvalLoading, setApprovalLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('info');

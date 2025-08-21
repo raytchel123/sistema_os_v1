@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, Calendar, Clock, User, Tag, Shield } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { showToast } from '../components/ui/Toast';
-import OSDrawer from '../components/kanban/OSDrawer';
+import { OSDrawer } from '../components/kanban/OSDrawer';
 
 interface OS {
   id: string;

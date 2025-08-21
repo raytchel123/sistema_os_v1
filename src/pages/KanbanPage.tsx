@@ -4,7 +4,7 @@ import { Kanban, Plus, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
 import { useOrdens } from '../hooks/useOrdens';
 import { STATUS_OPTIONS } from '../db/schema';
 import { OSCard } from '../components/kanban/OSCard';
-import OSDrawer from '../components/kanban/OSDrawer';
+import { OSDrawer } from '../components/kanban/OSDrawer';
 import { useState } from 'react';
 
 export function KanbanPage() {
