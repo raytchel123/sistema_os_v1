@@ -367,6 +367,51 @@ export async function postSchedule(req: Request, osId: string) {
   }
 }
 
+// DELETE /api/ordens/:id
+export async function deleteOS(req: Request, osId: string) {
+  try {
+    const { admin, user } = await getClients(req);
+    if (!user) return err('UNAUTHENTICATED', 'Usuário não autenticado', 401);
+
+    // Verificar se o usuário pode aprovar (permissão para deletar)
+    const { data: userData, error: userError } = await admin
+      .from('users')
+      .select('pode_aprovar, org_id')
+      .eq('id', user.id)
+      .single();
+
+    if (userError || !userData?.pode_aprovar) {
+      return err('FORBIDDEN', 'Usuário não tem permissão para remover OS', 403);
+    }
+
+    const os = await fetchOSById(admin, osId);
+    assertSameOrg(os, userData.org_id);
+
+    // Log da remoção antes de deletar
+    await logEvent(admin, osId, user.id, os.status, null, { 
+      action: 'DELETE',
+      titulo: os.titulo 
+    });
+
+    // Remover a OS (cascade delete cuidará dos relacionamentos)
+    const { error: deleteError } = await admin
+      .from('ordens_de_servico')
+      .delete()
+      .eq('id', osId);
+
+    if (deleteError) {
+      return err('DB_DELETE_FAILED', deleteError.message, 500);
+    }
+
+    return json({ success: true, message: 'OS removida com sucesso' });
+  } catch (e: any) {
+    if (e?.message === 'FORBIDDEN_ORG') {
+      return err('FORBIDDEN', 'OS pertence a outra organização', 403);
+    }
+    return err('UNEXPECTED', e?.message || 'Erro inesperado', 500);
+  }
+}
+
 // POST /api/sla/recalc
 export async function postSlaRecalc(req: Request) {
   try {
