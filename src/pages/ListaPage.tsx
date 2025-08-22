@@ -16,7 +16,7 @@ interface OS {
 }
 
 type SortField = 'titulo' | 'marca' | 'status' | 'prioridade' | 'data_publicacao_prevista' | 'criado_em';
-type SortField = 'numero_os' | 'titulo' | 'marca' | 'status' | 'prioridade' | 'data_publicacao_prevista' | 'criado_em';
+type SortField = 'titulo' | 'marca' | 'status' | 'prioridade' | 'data_publicacao_prevista' | 'criado_em';
 type SortDirection = 'asc' | 'desc';
 
 export function ListaPage() {
