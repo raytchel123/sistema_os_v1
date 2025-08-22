@@ -53,7 +53,7 @@ export function KanbanPage() {
   }, {} as Record<string, any[]>);
 
   return (
-    <div className="max-w-7xl mx-auto">
+<div className="w-full h-screen px-4">
       <div className="mb-8">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center space-x-3">
