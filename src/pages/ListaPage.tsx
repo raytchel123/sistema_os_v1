@@ -16,6 +16,7 @@ interface OS {
 }
 
 type SortField = 'titulo' | 'marca' | 'status' | 'prioridade' | 'data_publicacao_prevista' | 'criado_em';
+type SortField = 'numero_os' | 'titulo' | 'marca' | 'status' | 'prioridade' | 'data_publicacao_prevista' | 'criado_em';
 type SortDirection = 'asc' | 'desc';
 
 export function ListaPage() {
@@ -377,6 +378,15 @@ export function ListaPage() {
                     onClick={() => handleSort('titulo')}
                   >
                     <div className="flex items-center space-x-1">
+                      <span>Número</span>
+                      {getSortIcon('numero_os')}
+                    </div>
+                  </th>
+                  <th 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                    onClick={() => handleSort('titulo')}
+                  >
+                    <div className="flex items-center space-x-1">
                       <span>Título</span>
                       {getSortIcon('titulo')}
                     </div>
@@ -427,7 +437,7 @@ export function ListaPage() {
                     </div>
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Canais
+                    Categorias
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Ações
@@ -437,6 +447,11 @@ export function ListaPage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {sortedOrdens.map((os) => (
                   <tr key={os.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 font-mono">
+                        #{os.numero_os || '---'}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{os.titulo}</div>
                     </td>
@@ -470,18 +485,18 @@ export function ListaPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex flex-wrap gap-1">
-                        {(os.canais || []).slice(0, 3).map((canal, index) => (
+                        {(os.categorias_criativos || []).slice(0, 3).map((categoria, index) => (
                           <span key={index} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                            {canal}
+                            {categoria}
                           </span>
                         ))}
-                        {(os.canais || []).length > 3 && (
+                        {(os.categorias_criativos || []).length > 3 && (
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                            +{(os.canais || []).length - 3}
+                            +{(os.categorias_criativos || []).length - 3}
                           </span>
                         )}
-                        {(!os.canais || os.canais.length === 0) && (
-                          <span className="text-xs text-gray-400 italic">Nenhum canal</span>
+                        {(!os.categorias_criativos || os.categorias_criativos.length === 0) && (
+                          <span className="text-xs text-gray-400 italic">Nenhuma categoria</span>
                         )}
                       </div>
                     </td>

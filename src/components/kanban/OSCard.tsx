@@ -40,9 +40,14 @@ export function OSCard({ ordem, onClick }: OSCardProps) {
       className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 cursor-pointer hover:border-blue-300"
     >
       <div className="flex items-start justify-between mb-3">
-        <h4 className="font-medium text-gray-900 text-sm line-clamp-2 flex-1 mr-2">
-          {ordem.titulo}
-        </h4>
+        <div className="flex items-center space-x-2 flex-1 mr-2">
+          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-mono">
+            #{ordem.numero_os || '---'}
+          </span>
+          <h4 className="font-medium text-gray-900 text-sm line-clamp-2 flex-1">
+            {ordem.titulo}
+          </h4>
+        </div>
         <span className={`text-xs px-2 py-1 rounded-full border ${getPriorityColor(ordem.prioridade)}`}>
           {ordem.prioridade}
         </span>
