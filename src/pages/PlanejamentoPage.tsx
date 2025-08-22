@@ -348,7 +348,7 @@ export function PlanejamentoPage() {
   const weekDays = getWeekDays();
 
   return (
-    <div className="max-w-7xl mx-auto">
+<div className="w-full px-4">
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center justify-between">
