@@ -296,7 +296,7 @@ export function ListaPage() {
 
 
   return (
-    <div className="max-w-7xl mx-auto">
+<div className="w-full px-4">
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
