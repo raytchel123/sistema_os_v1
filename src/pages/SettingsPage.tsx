@@ -405,7 +405,7 @@ export function SettingsPage() {
   const selectedBrandData = brands.find(b => b.id === selectedBrand);
 
   return (
-    <div className="max-w-4xl mx-auto">
+<div className="w-full px-4">
       <div className="mb-8">
         <div className="flex items-center space-x-3 mb-2">
           <Settings className="w-8 h-8 text-purple-600" />
