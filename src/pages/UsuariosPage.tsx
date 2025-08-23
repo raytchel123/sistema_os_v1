@@ -80,7 +80,7 @@ export function UsuariosPage() {
   };
 
   const openEditModal = (user: User) => {
-    
+    console.log(user)
     setEditingUser(user);
     setFormData({
       nome: user.nome,
