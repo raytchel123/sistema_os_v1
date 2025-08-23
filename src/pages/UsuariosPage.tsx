@@ -16,6 +16,7 @@ interface UserFormData {
   email: string;
   papel: string;
   pode_aprovar: boolean;
+  pode_ver_todas_os: boolean;
   senha?: string;
 }
 export function UsuariosPage() {
@@ -28,6 +29,7 @@ export function UsuariosPage() {
     email: '',
     papel: 'EDITOR',
     pode_aprovar: false,
+    pode_ver_todas_os: false,
     senha: ''
   });
   const [formLoading, setFormLoading] = useState(false);
@@ -82,7 +84,8 @@ export function UsuariosPage() {
       nome: user.nome,
       email: user.email,
       papel: user.papel,
-      pode_aprovar: user.pode_aprovar
+      pode_aprovar: user.pode_aprovar,
+      pode_ver_todas_os: user.pode_ver_todas_os || false
     });
     setError(null);
     setShowModal(true);
@@ -96,6 +99,7 @@ export function UsuariosPage() {
       email: '',
       papel: 'EDITOR',
       pode_aprovar: false,
+      pode_ver_todas_os: false,
       senha: ''
     });
     setError(null);
