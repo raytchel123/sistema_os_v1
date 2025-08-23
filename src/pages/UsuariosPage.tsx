@@ -86,6 +86,7 @@ export function UsuariosPage() {
       papel: user.papel,
       pode_aprovar: user.pode_aprovar,
       pode_ver_todas_os: user.pode_ver_todas_os || false
+      pode_ver_todas_os: user.pode_ver_todas_os || false
     });
     setError(null);
     setShowModal(true);
@@ -135,6 +136,7 @@ export function UsuariosPage() {
         email: formData.email.trim(),
         papel: formData.papel,
         pode_aprovar: formData.pode_aprovar,
+        pode_ver_todas_os: formData.pode_ver_todas_os,
         ...(formData.senha && { senha: formData.senha })
       };
 
@@ -268,6 +270,9 @@ export function UsuariosPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Criado em
                   </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Visualização
+                  </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Ações
                   </th>
@@ -310,6 +315,17 @@ export function UsuariosPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(user.criado_em).toLocaleDateString('pt-BR')}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {user.pode_ver_todas_os ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          👁️ Todas as OS
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                          👤 Apenas suas
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">

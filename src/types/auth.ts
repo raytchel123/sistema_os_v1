@@ -3,6 +3,9 @@ export interface User {
   email: string;
   created_at: string;
   pode_ver_todas_os?: boolean;
+  pode_aprovar?: boolean;
+  nome?: string;
+  papel?: string;
 }
 
 export interface AuthContextType {
