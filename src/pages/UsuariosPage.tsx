@@ -8,6 +8,7 @@ interface User {
   email: string;
   papel: string;
   pode_aprovar: boolean;
+  pode_ver_todas_os: boolean;
   criado_em: string;
 }
 
@@ -447,7 +448,7 @@ export function UsuariosPage() {
                   <label className="flex items-center space-x-3">
                     <input
                       type="radio"
-                     name="pode_ver_todas_os"
+                      name="pode_ver_todas_os"
                       checked={!formData.pode_ver_todas_os}
                       onChange={(e) => {
                         if (e.target.checked) {
