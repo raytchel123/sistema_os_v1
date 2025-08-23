@@ -136,6 +136,7 @@ export function UsuariosPage() {
         papel: formData.papel,
         pode_aprovar: formData.pode_aprovar,
         pode_ver_todas_os: formData.pode_ver_todas_os,
+        pode_ver_todas_os: formData.pode_ver_todas_os,
         ...(formData.senha && { senha: formData.senha })
       };
 
