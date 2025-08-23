@@ -79,8 +79,9 @@ export function UsuariosPage() {
     setShowModal(true);
   };
 
-  console.log(user)
   const openEditModal = (user: User) => {
+      console.log(user)
+
     setEditingUser(user);
     setFormData({
       nome: user.nome,
