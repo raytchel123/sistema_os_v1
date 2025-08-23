@@ -80,8 +80,7 @@ export function UsuariosPage() {
   };
 
   const openEditModal = (user: User) => {
-      console.log(user)
-
+    
     setEditingUser(user);
     setFormData({
       nome: user.nome,
@@ -160,7 +159,6 @@ export function UsuariosPage() {
       }
 
       if (response.ok) {
-        console.log(payload)
         await fetchUsers();
         closeModal();
         showToast.success(editingUser ? 'Usuário atualizado com sucesso!' : 'Usuário criado com sucesso!');
@@ -220,7 +218,6 @@ export function UsuariosPage() {
     }
   };
 
-  console.log(formData.pode_ver_todas_os)
   const papelOptions = [
     { value: 'COPY', label: 'Copy' },
     { value: 'AUDIO', label: 'Áudio' },
