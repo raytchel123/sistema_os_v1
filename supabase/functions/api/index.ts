@@ -1261,6 +1261,7 @@ Deno.serve(async (req) => {
         email: body.email,
         papel: body.papel,
         pode_aprovar: body.pode_aprovar || false,
+        pode_ver_todas_os: body.pode_ver_todas_os || false,
         atualizado_em: new Date().toISOString()
       };
 
