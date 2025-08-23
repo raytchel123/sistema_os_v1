@@ -318,7 +318,7 @@ export function UsuariosPage() {
                       {new Date(user.criado_em).toLocaleDateString('pt-BR')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {user.pode_ver_todas_os ? (
+                      {user.pode_ver_todas_os === true ? (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                           👁️ Todas as OS
                         </span>
