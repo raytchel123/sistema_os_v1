@@ -76,7 +76,7 @@ export function OSCard({ ordem, onClick }: OSCardProps) {
         
           <div className="flex items-center text-xs text-gray-500">
             {formatDate(ordem.dataPublicacaoPrevista) && (
-              <span>📅 {formatDate(ordem.dataPublicacaoPrevista)}</span>
+              <span>📅 {   new Date(ordem.data_publicacao_prevista).toLocaleDateString('pt-BR') : </span>
             )}
           </div>
        
