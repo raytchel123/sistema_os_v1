@@ -52,11 +52,17 @@ export function KanbanPage() {
   useEffect(() => {
     if (currentUserId !== null && ordens.length > 0) {
       const filtered = userCanViewAll ? ordens : ordens.filter((os: any) => {
-        // Mostrar OS onde o usuário é responsável atual ou criador
-        return os.responsavel_atual === currentUserId || 
-               os.created_by === currentUserId ||
-               // Ou onde participa como responsável em alguma etapa
-               (os.responsaveis && Object.values(os.responsaveis).includes(currentUserId));
+        // Se pode ver todas as OS, mostrar todas
+        if (userCanViewAll) return true;
+        
+        // Se não pode ver todas, verificar se está participando
+        // Verificar se o ID do usuário está no objeto responsaveis
+        if (os.responsaveis && typeof os.responsaveis === 'object') {
+          const responsaveisIds = Object.values(os.responsaveis);
+          return responsaveisIds.includes(currentUserId);
+        }
+        
+        return false;
       });
       
       console.log('🔍 KanbanPage - Filtering OS:', {
