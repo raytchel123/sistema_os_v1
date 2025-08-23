@@ -2,6 +2,7 @@ export interface User {
   id: string;
   email: string;
   created_at: string;
+  pode_ver_todas_os?: boolean;
 }
 
 export interface AuthContextType {

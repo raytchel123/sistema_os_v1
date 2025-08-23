@@ -266,9 +266,6 @@ export function UsuariosPage() {
                     Pode Aprovar
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Visualização
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Criado em
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -424,6 +421,40 @@ export function UsuariosPage() {
                 <p className="text-xs text-gray-500 mt-1">
                   Permite que este usuário aprove OS na etapa de aprovação
                 </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Nível de Visualização
+                </label>
+                <div className="space-y-3">
+                  <label className="flex items-center space-x-3">
+                    <input
+                      type="radio"
+                      name="visibilidade"
+                      checked={!formData.pode_ver_todas_os}
+                      onChange={() => setFormData(prev => ({ ...prev, pode_ver_todas_os: false }))}
+                      className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">👤 Apenas suas OS</span>
+                      <p className="text-xs text-gray-500">Visualiza apenas OS onde é responsável ou participante</p>
+                    </div>
+                  </label>
+                  <label className="flex items-center space-x-3">
+                    <input
+                      type="radio"
+                      name="visibilidade"
+                      checked={formData.pode_ver_todas_os}
+                      onChange={() => setFormData(prev => ({ ...prev, pode_ver_todas_os: true }))}
+                      className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">👁️ Todas as OS</span>
+                      <p className="text-xs text-gray-500">Visualiza todas as OS da organização</p>
+                    </div>
+                  </label>
+                </div>
               </div>
 
               {!editingUser && (
