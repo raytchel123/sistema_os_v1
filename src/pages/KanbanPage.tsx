@@ -5,12 +5,72 @@ import { useOrdens } from '../hooks/useOrdens';
 import { STATUS_OPTIONS } from '../db/schema';
 import { OSCard } from '../components/kanban/OSCard';
 import { OSDrawer } from '../components/kanban/OSDrawer';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 
 export function KanbanPage() {
   const { ordens, stats, loading, error, safeNum, refetch } = useOrdens();
   const [selectedOrdem, setSelectedOrdem] = useState<any>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [filteredOrdens, setFilteredOrdens] = useState<any[]>([]);
+  const [userCanViewAll, setUserCanViewAll] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const { user } = useAuth();
+
+  const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
+
+  useEffect(() => {
+    const checkUserPermissions = async () => {
+      try {
+        const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
+        if (!session) return;
+
+        const headers = {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        };
+
+        const response = await fetch(`${apiUrl}/api`, { headers });
+        
+        if (response.ok) {
+          const userData = await response.json();
+          setUserCanViewAll(userData.pode_ver_todas_os || false);
+          setCurrentUserId(userData.id);
+          console.log('👁️ KanbanPage - User visibility permissions:', {
+            pode_ver_todas_os: userData.pode_ver_todas_os,
+            user_id: userData.id
+          });
+        }
+      } catch (err) {
+        console.error('Erro ao verificar permissões de visualização:', err);
+      }
+    };
+
+    checkUserPermissions();
+  }, [user]);
+
+  useEffect(() => {
+    if (currentUserId !== null && ordens.length > 0) {
+      const filtered = userCanViewAll ? ordens : ordens.filter((os: any) => {
+        // Mostrar OS onde o usuário é responsável atual ou criador
+        return os.responsavel_atual === currentUserId || 
+               os.created_by === currentUserId ||
+               // Ou onde participa como responsável em alguma etapa
+               (os.responsaveis && Object.values(os.responsaveis).includes(currentUserId));
+      });
+      
+      console.log('🔍 KanbanPage - Filtering OS:', {
+        total: ordens.length,
+        filtered: filtered.length,
+        userCanViewAll,
+        currentUserId
+      });
+      
+      setFilteredOrdens(filtered);
+    } else {
+      setFilteredOrdens(ordens);
+    }
+  }, [ordens, userCanViewAll, currentUserId]);
 
   const openDrawer = (ordem: any) => {
     setSelectedOrdem(ordem);
@@ -48,7 +108,7 @@ export function KanbanPage() {
 
   // Agrupar ordens por status
   const ordensGrouped = STATUS_OPTIONS.reduce((acc, status) => {
-    acc[status] = ordens.filter(ordem => ordem.status === status);
+    acc[status] = filteredOrdens.filter(ordem => ordem.status === status);
     return acc;
   }, {} as Record<string, any[]>);
 
