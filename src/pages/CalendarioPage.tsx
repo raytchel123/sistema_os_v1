@@ -4,6 +4,7 @@ import { OSDrawer } from '../components/kanban/OSDrawer';
 import { CronogramaUpload } from '../components/cronograma/CronogramaUpload';
 import { useCronograma } from '../hooks/useCronograma';
 import { showToast } from '../components/ui/Toast';
+import { useAuth } from '../contexts/AuthContext';
 
 interface OSEvent {
   id: string;
@@ -13,10 +14,14 @@ interface OSEvent {
   prioridade: string;
   prazo: string;
   canais: string[];
+  responsaveis: any;
+  created_by: string;
+  responsavel_atual: string;
 }
 
 export function CalendarioPage() {
   const [events, setEvents] = useState<OSEvent[]>([]);
+  const [filteredEvents, setFilteredEvents] = useState<OSEvent[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
   const [filters, setFilters] = useState({
@@ -29,13 +34,75 @@ export function CalendarioPage() {
   const [selectedOS, setSelectedOS] = useState<OSEvent | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [showCronogramaUpload, setShowCronogramaUpload] = useState(false);
+  const [userCanViewAll, setUserCanViewAll] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const { processarCronograma } = useCronograma();
+  const { user } = useAuth();
 
   const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
 
   useEffect(() => {
     fetchEvents();
+    checkUserPermissions();
   }, [currentDate, filters]);
+
+  useEffect(() => {
+    if (currentUserId !== null && events.length > 0) {
+      const filtered = userCanViewAll ? events : events.filter((os: any) => {
+        // Se pode ver todas as OS, mostrar todas
+        if (userCanViewAll) return true;
+        
+        // Se não pode ver todas, verificar se está participando
+        // Verificar se o ID do usuário está no objeto responsaveis
+        if (os.responsaveis && typeof os.responsaveis === 'object') {
+          const responsaveisIds = Object.values(os.responsaveis);
+          return responsaveisIds.includes(currentUserId);
+        }
+        
+        // Verificar se é responsável atual ou criador
+        return os.responsavel_atual === currentUserId || os.created_by === currentUserId;
+      });
+      
+      console.log('🔍 CalendarioPage - Filtering OS:', {
+        total: events.length,
+        filtered: filtered.length,
+        userCanViewAll,
+        currentUserId
+      });
+      
+      setFilteredEvents(filtered);
+    } else {
+      setFilteredEvents(events);
+    }
+  }, [events, userCanViewAll, currentUserId]);
+
+  const checkUserPermissions = async () => {
+    try {
+      console.log('🔍 Checking user permissions in CalendarioPage...');
+      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
+      if (!session) return;
+
+      const headers = {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      };
+
+      const response = await fetch(`${apiUrl}/api`, { headers });
+      
+      if (response.ok) {
+        const userData = await response.json();
+        console.log('👤 CalendarioPage user data:', userData);
+        setUserCanViewAll(userData.pode_ver_todas_os || false);
+        setCurrentUserId(userData.id);
+        console.log('✅ CalendarioPage userCanViewAll set to:', userData.pode_ver_todas_os);
+      } else {
+        const errorText = await response.text();
+        console.error('❌ CalendarioPage API Error:', response.status, errorText);
+      }
+    } catch (err) {
+      console.error('Erro ao verificar permissões:', err);
+    }
+  };
 
   const fetchEvents = async () => {
     try {
@@ -200,7 +267,7 @@ export function CalendarioPage() {
     return (
       <div className="grid grid-cols-7 gap-1 h-96">
         {days.map((day, index) => {
-          const dayEvents = events.filter(event => 
+          const dayEvents = filteredEvents.filter(event => 
             event.prazo === day.toISOString().split('T')[0]
           );
 
@@ -274,7 +341,7 @@ export function CalendarioPage() {
           <div key={weekIndex} className="grid grid-cols-7 gap-1">
             {week.map((day, dayIndex) => {
               const isCurrentMonth = day.getMonth() === currentDate.getMonth();
-              const dayEvents = events.filter(event => 
+              const dayEvents = filteredEvents.filter(event => 
                 event.prazo === day.toISOString().split('T')[0]
               );
 
