@@ -74,13 +74,12 @@ export function OSCard({ ordem, onClick }: OSCardProps) {
           </div>
         )}
         
-        {ordem.dataPublicacaoPrevista && (
           <div className="flex items-center text-xs text-gray-500">
             {formatDate(ordem.dataPublicacaoPrevista) && (
               <span>📅 {formatDate(ordem.dataPublicacaoPrevista)}</span>
             )}
           </div>
-        )}
+       
       </div>
     </div>
   );
