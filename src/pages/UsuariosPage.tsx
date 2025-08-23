@@ -158,7 +158,7 @@ export function UsuariosPage() {
       }
 
       if (response.ok) {
-        console.log(response.body)
+        console.log(payload)
         await fetchUsers();
         closeModal();
         showToast.success(editingUser ? 'Usuário atualizado com sucesso!' : 'Usuário criado com sucesso!');
