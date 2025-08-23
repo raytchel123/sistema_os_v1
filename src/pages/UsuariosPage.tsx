@@ -58,7 +58,6 @@ export function UsuariosPage() {
       if (response.ok) {
         const data = await response.json();
         setUsers(data);
-        console.log(data)
       }
     } catch (err) {
       console.error('Erro ao carregar usuários:', err);
