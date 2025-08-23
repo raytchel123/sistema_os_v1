@@ -13,6 +13,9 @@ interface OS {
   prioridade: string;
   data_publicacao_prevista: string;
   criado_em: string;
+  responsaveis: any;
+  created_by: string;
+  responsavel_atual: string;
 }
 
 type SortField = 'titulo' | 'marca' | 'status' | 'prioridade' | 'data_publicacao_prevista' | 'criado_em';
@@ -20,11 +23,14 @@ type SortDirection = 'asc' | 'desc';
 
 export function ListaPage() {
   const [ordens, setOrdens] = useState<OS[]>([]);
+  const [filteredOrdens, setFilteredOrdens] = useState<OS[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOS, setSelectedOS] = useState<any>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [userCanApprove, setUserCanApprove] = useState(false);
+  const [userCanViewAll, setUserCanViewAll] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [sortField, setSortField] = useState<SortField>('criado_em');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -43,6 +49,35 @@ export function ListaPage() {
     checkUserPermissions();
   }, [filters]);
 
+  useEffect(() => {
+    if (currentUserId !== null && ordens.length > 0) {
+      const filtered = userCanViewAll ? ordens : ordens.filter((os: any) => {
+        // Se pode ver todas as OS, mostrar todas
+        if (userCanViewAll) return true;
+        
+        // Se não pode ver todas, verificar se está participando
+        // Verificar se o ID do usuário está no objeto responsaveis
+        if (os.responsaveis && typeof os.responsaveis === 'object') {
+          const responsaveisIds = Object.values(os.responsaveis);
+          return responsaveisIds.includes(currentUserId);
+        }
+        
+        // Verificar se é responsável atual ou criador
+        return os.responsavel_atual === currentUserId || os.created_by === currentUserId;
+      });
+      
+      console.log('🔍 ListaPage - Filtering OS:', {
+        total: ordens.length,
+        filtered: filtered.length,
+        userCanViewAll,
+        currentUserId
+      });
+      
+      setFilteredOrdens(filtered);
+    } else {
+      setFilteredOrdens(ordens);
+    }
+  }, [ordens, userCanViewAll, currentUserId]);
   const checkUserPermissions = async () => {
     try {
       console.log('🔍 Checking user permissions in ListaPage...');
@@ -60,7 +95,10 @@ export function ListaPage() {
         const userData = await response.json();
         console.log('👤 ListaPage user data:', userData);
         setUserCanApprove(userData.pode_aprovar || false);
+        setUserCanViewAll(userData.pode_ver_todas_os || false);
+        setCurrentUserId(userData.id);
         console.log('✅ ListaPage userCanApprove set to:', userData.pode_aprovar);
+        console.log('✅ ListaPage userCanViewAll set to:', userData.pode_ver_todas_os);
       } else {
         const errorText = await response.text();
         console.error('❌ ListaPage API Error:', response.status, errorText);
@@ -263,11 +301,11 @@ export function ListaPage() {
       <ChevronDown className="w-4 h-4 text-blue-600" />;
   };
 
-  const filteredOrdens = ordens.filter(os =>
+  const searchFilteredOrdens = filteredOrdens.filter(os =>
     os.titulo.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const sortedOrdens = [...filteredOrdens].sort((a, b) => {
+  const sortedOrdens = [...searchFilteredOrdens].sort((a, b) => {
     let aValue: any = a[sortField];
     let bValue: any = b[sortField];
 
