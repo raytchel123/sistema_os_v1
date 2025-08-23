@@ -1264,7 +1264,7 @@ Deno.serve(async (req) => {
         atualizado_em: new Date().toISOString()
       };
 
-      conste.log(body)
+      conste.log(updateData)
       // Add password if provided
       if (body.senha) {
         const passwordHash = await crypto.subtle.digest(
