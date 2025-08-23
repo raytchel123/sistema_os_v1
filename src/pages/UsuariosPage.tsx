@@ -216,6 +216,7 @@ export function UsuariosPage() {
     }
   };
 
+  consoloe.log(formData.pode_ver_todas_os)
   const papelOptions = [
     { value: 'COPY', label: 'Copy' },
     { value: 'AUDIO', label: 'Áudio' },
