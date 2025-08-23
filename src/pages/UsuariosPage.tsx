@@ -86,7 +86,6 @@ export function UsuariosPage() {
       papel: user.papel,
       pode_aprovar: user.pode_aprovar,
       pode_ver_todas_os: user.pode_ver_todas_os || false
-      pode_ver_todas_os: user.pode_ver_todas_os || false
     });
     setError(null);
     setShowModal(true);
