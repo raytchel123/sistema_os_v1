@@ -447,7 +447,7 @@ export function UsuariosPage() {
                   <label className="flex items-center space-x-3">
                     <input
                       type="radio"
-                      name="visibilidade"
+                     name="pode_ver_todas_os"
                       checked={!formData.pode_ver_todas_os}
                       onChange={(e) => {
                         if (e.target.checked) {
@@ -464,7 +464,7 @@ export function UsuariosPage() {
                   <label className="flex items-center space-x-3">
                     <input
                       type="radio"
-                      name="visibilidade"
+                     name="pode_ver_todas_os"
                       checked={formData.pode_ver_todas_os}
                       onChange={(e) => {
                         if (e.target.checked) {
