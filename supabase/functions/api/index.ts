@@ -1228,6 +1228,7 @@ Deno.serve(async (req) => {
         email: body.email,
         papel: body.papel,
         pode_aprovar: body.pode_aprovar || false,
+        pode_ver_todas_os: body.pode_ver_todas_os || false,
         senha_hash: hashedPassword,
         org_id: currentUser?.org_id || null
       };
@@ -1235,7 +1236,7 @@ Deno.serve(async (req) => {
       const { data: newUser, error } = await supabaseClient
         .from('users')
         .insert(userData)
-        .select('id, nome, email, papel, pode_aprovar, criado_em')
+        .select('id, nome, email, papel, pode_aprovar,pode_ver_todas_os, criado_em')
         .single();
 
       if (error) {
