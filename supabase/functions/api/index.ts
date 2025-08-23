@@ -1281,7 +1281,7 @@ Deno.serve(async (req) => {
         .from('users')
         .update(updateData)
         .eq('id', userId)
-        .select('id, nome, email, papel, pode_aprovar, criado_em')
+        .select('id, nome, email, papel, pode_aprovar, pode_ver_todas_os, criado_em')
         .single();
 
       if (error) {
