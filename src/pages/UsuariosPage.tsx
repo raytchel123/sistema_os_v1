@@ -449,7 +449,11 @@ export function UsuariosPage() {
                       type="radio"
                       name="visibilidade"
                       checked={!formData.pode_ver_todas_os}
-                      onChange={() => setFormData(prev => ({ ...prev, pode_ver_todas_os: false }))}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setFormData(prev => ({ ...prev, pode_ver_todas_os: false }));
+                        }
+                      }}
                       className="w-4 h-4 text-blue-600 focus:ring-blue-500"
                     />
                     <div>
@@ -462,7 +466,11 @@ export function UsuariosPage() {
                       type="radio"
                       name="visibilidade"
                       checked={formData.pode_ver_todas_os}
-                      onChange={() => setFormData(prev => ({ ...prev, pode_ver_todas_os: true }))}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setFormData(prev => ({ ...prev, pode_ver_todas_os: true }));
+                        }
+                      }}
                       className="w-4 h-4 text-blue-600 focus:ring-blue-500"
                     />
                     <div>
