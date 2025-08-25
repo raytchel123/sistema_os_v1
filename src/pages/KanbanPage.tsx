@@ -140,8 +140,8 @@ export function KanbanPage() {
         
         {/* Stats Cards */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
+   <div className="grid grid-flow-col auto-cols-max gap-4 mt-6 overflow-x-auto">
+  <div className="bg-white rounded-lg border border-gray-200 p-4">
               <div className="flex items-center">
                 <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
                 <div>
@@ -150,7 +150,7 @@ export function KanbanPage() {
                 </div>
               </div>
             </div>
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
+  <div className="bg-white rounded-lg border border-gray-200 p-4">
               <div className="flex items-center">
                 <CheckCircle className="w-5 h-5 text-purple-600 mr-2" />
                 <div>
@@ -159,7 +159,7 @@ export function KanbanPage() {
                 </div>
               </div>
             </div>
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
+  <div className="bg-white rounded-lg border border-gray-200 p-4">
               <div className="flex items-center">
                 <CheckCircle className="w-5 h-5 text-purple-600 mr-2" />
                 <div>
@@ -168,7 +168,7 @@ export function KanbanPage() {
                 </div>
               </div>
             </div>
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
+  <div className="bg-white rounded-lg border border-gray-200 p-4">
               <div className="flex items-center">
                 <CheckCircle className="w-5 h-5 text-red-600 mr-2" />
                 <div>
@@ -177,7 +177,7 @@ export function KanbanPage() {
                 </div>
               </div>
             </div>
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
+  <div className="bg-white rounded-lg border border-gray-200 p-4">
               <div className="flex items-center">
                 <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
                 <div>
