@@ -190,7 +190,7 @@ export function CriarOSPage() {
         midia_bruta_links: formData.midia_bruta_links.filter(link => link.trim()),
         criativos_prontos_links: formData.criativos_prontos_links.filter(link => link.trim()),
         data_publicacao_prevista: formData.data_publicacao_prevista || null,
-        canais: formData.canais,
+        canais: ['Instagram'], // Default channel
         gancho: formData.gancho || null,
         cta: formData.cta || null
       };
@@ -236,20 +236,6 @@ export function CriarOSPage() {
       setFormData(prev => ({
         ...prev,
         categorias_criativos: prev.categorias_criativos.filter(c => c !== categoria)
-      }));
-    }
-  };
-
-  const handleCanaisChange = (canal: string, checked: boolean) => {
-    if (checked) {
-      setFormData(prev => ({
-        ...prev,
-        canais: [...prev.canais, canal]
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        canais: prev.canais.filter(c => c !== canal)
       }));
     }
   };
@@ -625,26 +611,6 @@ export function CriarOSPage() {
               onChange={(e) => setFormData(prev => ({ ...prev, data_publicacao_prevista: e.target.value }))}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
             />
-          </div>
-
-          {/* Canais */}
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              Canais de Distribuição
-            </label>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {canaisOptions.map(canal => (
-                <label key={canal} className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.canais.includes(canal)}
-                    onChange={(e) => handleCanaisChange(canal, e.target.checked)}
-                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-700">{canal}</span>
-                </label>
-              ))}
-            </div>
           </div>
 
           {/* Gancho */}
