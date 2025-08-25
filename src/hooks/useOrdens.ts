@@ -92,7 +92,7 @@ export function useOrdens() {
           publicado: safeNum(filteredOrdens?.filter((o: any) => o.status === 'PUBLICADO')?.length),
           alta_prioridade: safeNum(filteredOrdens?.filter((o: any) => o.prioridade === 'HIGH')?.length),
           atrasadas: safeNum(filteredOrdens?.filter((o: any) => 
-            o.prazo && !isNaN(new Date(o.prazo).getTime()) && new Date(o.prazo) < new Date() && o.prazo !== 'PUBLICADO'
+            o.prazo && !isNaN(new Date(o.prazo).getTime()) && new Date(o.prazo) < new Date() && o.status !== 'PUBLICADO'
           )?.length),
         };
         
@@ -153,9 +153,9 @@ export function useOrdens() {
         aprovacao: safeNum(filteredOrdens?.filter((o: any) => o.status === 'APROVACAO').length),
         agendamento: safeNum(filteredOrdens?.filter((o: any) => o.status === 'AGENDAMENTO').length),
         publicado: safeNum(filteredOrdens?.filter((o: any) => o.status === 'PUBLICADO').length),
-        atrasadas: safeNum(filteredOrdens?.filter((o: any) => 
-          o.sla_atual && new Date(o.sla_atual) < new Date() && o.status !== 'PUBLICADO'
-        ).length),
+          atrasadas: safeNum(filteredOrdens?.filter((o: any) => 
+            o.prazo && !isNaN(new Date(o.prazo).getTime()) && new Date(o.prazo) < new Date() && o.status !== 'PUBLICADO'
+          )?.length),
       }
       
       setOrdens(filteredOrdens);
