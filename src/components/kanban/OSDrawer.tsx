@@ -762,7 +762,7 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
               </div>
 
               {/* Canais */}
-              <div>
+              <div classNme='d-none'>
                 <label className="block text-sm font-medium text-gray-700 mb-3">
                   Canais de Distribuição
                 </label>
