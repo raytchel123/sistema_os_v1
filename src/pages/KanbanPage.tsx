@@ -170,6 +170,15 @@ export function KanbanPage() {
             </div>
             <div className="bg-white rounded-lg border border-gray-200 p-4">
               <div className="flex items-center">
+                <CheckCircle className="w-5 h-5 text-red-600 mr-2" />
+                <div>
+                  <p className="text-sm text-gray-600">Em Atraso</p>
+                  <p className="text-2xl font-bold text-gray-900">{safeNum(stats.atrasadas)}</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-lg border border-gray-200 p-4">
+              <div className="flex items-center">
                 <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
                 <div>
                   <p className="text-sm text-gray-600">Publicados</p>
