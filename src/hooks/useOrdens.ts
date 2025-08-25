@@ -33,10 +33,10 @@ export function useOrdens() {
           const userData = await response.json();
           setUserCanViewAll(userData.pode_ver_todas_os || false);
           setCurrentUserId(userData.id);
-          console.log('👁️ User visibility permissions:', {
-            pode_ver_todas_os: userData.pode_ver_todas_os,
-            user_id: userData.id
-          });
+          // console.log('👁️ User visibility permissions:', {
+          //   pode_ver_todas_os: userData.pode_ver_todas_os,
+          //   user_id: userData.id
+          // });
         }
       } catch (err) {
         console.error('Erro ao verificar permissões de visualização:', err);
@@ -92,7 +92,7 @@ export function useOrdens() {
           publicado: safeNum(filteredOrdens?.filter((o: any) => o.status === 'PUBLICADO')?.length),
           alta_prioridade: safeNum(filteredOrdens?.filter((o: any) => o.prioridade === 'HIGH')?.length),
           atrasadas: safeNum(filteredOrdens?.filter((o: any) => 
-            o.sla_atual && !isNaN(new Date(o.sla_atual).getTime()) && new Date(o.sla_atual) < new Date() && o.status !== 'PUBLICADO'
+            o.prazo && !isNaN(new Date(o.prazo).getTime()) && new Date(o.prazo) < new Date() && o.prazo !== 'PUBLICADO'
           )?.length),
         };
         
