@@ -92,7 +92,7 @@ export function useOrdens() {
           publicado: safeNum(filteredOrdens?.filter((o: any) => o.status === 'PUBLICADO')?.length),
           alta_prioridade: safeNum(filteredOrdens?.filter((o: any) => o.prioridade === 'HIGH')?.length),
           atrasadas: safeNum(filteredOrdens?.filter((o: any) => 
-            o.sla_atual && !isNaN(new Date(o.sla_atual).getTime()) && new Date(o.sla_atual) < new Date() && o.status !== 'POSTADO'
+            o.sla_atual && !isNaN(new Date(o.sla_atual).getTime()) && new Date(o.sla_atual) < new Date() && o.status !== 'PUBLICADO'
           )?.length),
         };
         
