@@ -132,24 +132,26 @@ export function UsuariosPage() {
     setEditingUser(user);
     
     console.log('🔍 DEBUG - User data for edit modal:', user);
-    console.log('🔍 DEBUG - User menu_permissions:', user.menu_permissions);
+    console.log('🔍 DEBUG - User menu_permissions:', (user as any).menu_permissions);
     
-    // Usar permissões do usuário diretamente, sem mesclar com padrões
-    const userPermissions = user.menu_permissions || {
-      kanban: true,
-      lista: true,
-      calendario: true,
-      biblioteca: true,
-      ideias: true,
-      importar: false,
-      ideias_pendentes: false,
-      tendencias: true,
-      relatorios: false,
-      settings: false,
-      usuarios: false
+    // Usar permissões do usuário diretamente do banco de dados
+    const userPermissions = (user as any).menu_permissions || {};
+    
+    // Garantir que todas as chaves existam, mas preservar valores do banco
+    const finalPermissions = {
+      kanban: userPermissions.kanban ?? true,
+      lista: userPermissions.lista ?? true,
+      calendario: userPermissions.calendario ?? true,
+      biblioteca: userPermissions.biblioteca ?? true,
+      ideias: userPermissions.ideias ?? true,
+      importar: userPermissions.importar ?? false,
+      ideias_pendentes: userPermissions.ideias_pendentes ?? false,
+      relatorios: userPermissions.relatorios ?? false,
+      settings: userPermissions.settings ?? false,
+      usuarios: userPermissions.usuarios ?? false
     };
     
-    console.log('🔍 DEBUG - Final permissions for modal:', userPermissions);
+    console.log('🔍 DEBUG - Final permissions for modal:', finalPermissions);
     
     setFormData({
       nome: user.nome,
@@ -157,7 +159,7 @@ export function UsuariosPage() {
       papel: user.papel,
       pode_aprovar: user.pode_aprovar,
       pode_ver_todas_os: user.pode_ver_todas_os || false,
-      menu_permissions: userPermissions
+      menu_permissions: finalPermissions
     });
     setError(null);
     setShowModal(true);
