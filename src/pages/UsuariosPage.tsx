@@ -148,9 +148,11 @@ export function UsuariosPage() {
       ideias_pendentes: userPermissions.ideias_pendentes ?? false,
       relatorios: userPermissions.relatorios ?? false,
       settings: userPermissions.settings ?? false,
+      usuarios: userPermissions.usuarios ?? false
+    };
     // Usar permissões EXATAMENTE como estão no banco de dados
-    const userPermissions = (user as any).menu_permissions || {};
-    console.log('🔍 DEBUG - Raw permissions from DB:', userPermissions);
+    const userPermissions2 = (user as any).menu_permissions || {};
+    console.log('🔍 DEBUG - Raw permissions from DB:', userPermissions2);
     
     setFormData({
       nome: user.nome,
@@ -159,16 +161,16 @@ export function UsuariosPage() {
       pode_aprovar: user.pode_aprovar,
       pode_ver_todas_os: user.pode_ver_todas_os || false,
       menu_permissions: {
-        kanban: userPermissions.kanban || false,
-        lista: userPermissions.lista || false,
-        calendario: userPermissions.calendario || false,
-        biblioteca: userPermissions.biblioteca || false,
-        ideias: userPermissions.ideias || false,
-        importar: userPermissions.importar || false,
-        ideias_pendentes: userPermissions.ideias_pendentes || false,
-        relatorios: userPermissions.relatorios || false,
-        settings: userPermissions.settings || false,
-        usuarios: userPermissions.usuarios || false
+        kanban: userPermissions2.kanban || false,
+        lista: userPermissions2.lista || false,
+        calendario: userPermissions2.calendario || false,
+        biblioteca: userPermissions2.biblioteca || false,
+        ideias: userPermissions2.ideias || false,
+        importar: userPermissions2.importar || false,
+        ideias_pendentes: userPermissions2.ideias_pendentes || false,
+        relatorios: userPermissions2.relatorios || false,
+        settings: userPermissions2.settings || false,
+        usuarios: userPermissions2.usuarios || false
       }
     });
     setError(null);
@@ -545,7 +547,7 @@ export function UsuariosPage() {
                         onChange={(e) => setFormData(prev => ({
                           ...prev,
                           menu_permissions: {
-                            ...prev. ,
+                            ...prev.menu_permissions,
                             [key]: e.target.checked
                           }
                         }))}
