@@ -535,7 +535,7 @@ export function UsuariosPage() {
                         onChange={(e) => setFormData(prev => ({
                           ...prev,
                           menu_permissions: {
-                            ...prev.menu_permissions,
+                            ...prev. ,
                             [key]: e.target.checked
                           }
                         }))}
