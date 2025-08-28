@@ -126,7 +126,7 @@ export function UsuariosPage() {
       papel: user.papel,
       pode_aprovar: user.pode_aprovar,
       pode_ver_todas_os: user.pode_ver_todas_os || false,
-      menu_permissions: {
+      menu_permissions: user.menu_permissions || {
         kanban: true,
         lista: true,
         calendario: true,
