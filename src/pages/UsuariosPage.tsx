@@ -84,14 +84,8 @@ export function UsuariosPage() {
       
       if (response.ok) {
         const data = await response.json();
-        console.log('🔍 DEBUG - Users fetched from API:', data);
         data.forEach((user: any) => {
-          console.log(`👤 User ${user.nome}:`, {
-            raw_user_data: user,
-            menu_permissions: user.menu_permissions,
-            pode_aprovar: user.pode_aprovar,
-            pode_ver_todas_os: user.pode_ver_todas_os
-          });
+          
         });
         setUsers(data);
       }
