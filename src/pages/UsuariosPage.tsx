@@ -137,22 +137,7 @@ export function UsuariosPage() {
     // Usar permissões do usuário diretamente do banco de dados
     const userPermissions = (user as any).menu_permissions || {};
     
-    // Garantir que todas as chaves existam, mas preservar valores do banco
-    const finalPermissions = {
-      kanban: userPermissions.kanban ?? true,
-      lista: userPermissions.lista ?? true,
-      calendario: userPermissions.calendario ?? true,
-      biblioteca: userPermissions.biblioteca ?? true,
-      ideias: userPermissions.ideias ?? true,
-      importar: userPermissions.importar ?? false,
-      ideias_pendentes: userPermissions.ideias_pendentes ?? false,
-      relatorios: userPermissions.relatorios ?? false,
-      settings: userPermissions.settings ?? false,
-      usuarios: userPermissions.usuarios ?? false
-    };
-    // Usar permissões EXATAMENTE como estão no banco de dados
-    const userPermissions2 = (user as any).menu_permissions || {};
-    console.log('🔍 DEBUG - Raw permissions from DB:', userPermissions2);
+    console.log('🔍 DEBUG - Raw permissions from DB:', userPermissions);
     
     setFormData({
       nome: user.nome,
@@ -161,16 +146,16 @@ export function UsuariosPage() {
       pode_aprovar: user.pode_aprovar,
       pode_ver_todas_os: user.pode_ver_todas_os || false,
       menu_permissions: {
-        kanban: userPermissions2.kanban || false,
-        lista: userPermissions2.lista || false,
-        calendario: userPermissions2.calendario || false,
-        biblioteca: userPermissions2.biblioteca || false,
-        ideias: userPermissions2.ideias || false,
-        importar: userPermissions2.importar || false,
-        ideias_pendentes: userPermissions2.ideias_pendentes || false,
-        relatorios: userPermissions2.relatorios || false,
-        settings: userPermissions2.settings || false,
-        usuarios: userPermissions2.usuarios || false
+        kanban: userPermissions.kanban === true,
+        lista: userPermissions.lista === true,
+        calendario: userPermissions.calendario === true,
+        biblioteca: userPermissions.biblioteca === true,
+        ideias: userPermissions.ideias === true,
+        importar: userPermissions.importar === true,
+        ideias_pendentes: userPermissions.ideias_pendentes === true,
+        relatorios: userPermissions.relatorios === true,
+        settings: userPermissions.settings === true,
+        usuarios: userPermissions.usuarios === true
       }
     });
     setError(null);
