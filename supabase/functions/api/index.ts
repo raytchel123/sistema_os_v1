@@ -1263,6 +1263,7 @@ Deno.serve(async (req) => {
         papel: body.papel,
         pode_aprovar: body.pode_aprovar || false,
         pode_ver_todas_os: body.pode_ver_todas_os || false,
+        menu_permissions: body.menu_permissions || false,
         atualizado_em: new Date().toISOString()
       };
 
