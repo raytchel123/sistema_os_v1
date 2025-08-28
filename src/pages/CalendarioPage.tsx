@@ -466,6 +466,16 @@ export function CalendarioPage() {
               <option value="CRISPIM">Crispim</option>
               <option value="FAZENDA">Fazenda</option>
             </select>
+            
+            <select
+              value={filters.atraso}
+              onChange={(e) => setFilters(prev => ({ ...prev, atraso: e.target.value }))}
+              className="text-sm border border-gray-300 rounded px-2 py-1"
+            >
+              <option value="">Todos os prazos</option>
+              <option value="sim">Em atraso</option>
+              <option value="nao">No prazo</option>
+            </select>
           </div>
         </div>
       </div>

@@ -413,6 +413,16 @@ export function ListaPage() {
               <option value="AGENDAMENTO">Agendamento</option>
               <option value="PUBLICADO">Publicado</option>
             </select>
+            
+            <select
+              value={filters.atraso}
+              onChange={(e) => setFilters(prev => ({ ...prev, atraso: e.target.value }))}
+              className="border border-gray-300 rounded px-3 py-2"
+            >
+              <option value="">Todos os prazos</option>
+              <option value="sim">Em atraso</option>
+              <option value="nao">No prazo</option>
+            </select>
           </div>
         </div>
       </div>
