@@ -528,7 +528,7 @@ export function UsuariosPage() {
                     <label key={key} className="flex items-center space-x-2">
                       <input
                         type="checkbox"
-                        checked={formData.menu_permissions[key as keyof typeof formData.menu_permissions]}
+                        checked={formData.menu_permissions[key as keyof typeof formData.menu_permissions] === true}
                         onChange={(e) => setFormData(prev => ({
                           ...prev,
                           menu_permissions: {
