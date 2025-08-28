@@ -245,6 +245,7 @@ export function UsuariosPage() {
         ...(formData.senha && { senha: formData.senha })
       };
 
+      console.log(payload)
       let response;
       if (editingUser) {
         // Update user
