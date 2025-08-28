@@ -33,6 +33,7 @@ interface UserFormData {
     usuarios: boolean;
   };
 }
+
 export function UsuariosPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,6 +54,7 @@ export function UsuariosPage() {
       ideias: true,
       importar: false,
       ideias_pendentes: false,
+      tendencias: true,
       relatorios: false,
       settings: false,
       usuarios: false
@@ -98,6 +100,7 @@ export function UsuariosPage() {
       email: '',
       papel: 'EDITOR',
       pode_aprovar: false,
+      pode_ver_todas_os: false,
       senha: '',
       menu_permissions: {
         kanban: true,
@@ -130,6 +133,7 @@ export function UsuariosPage() {
       ideias: true,
       importar: false,
       ideias_pendentes: false,
+      tendencias: true,
       relatorios: false,
       settings: false,
       usuarios: false
@@ -145,7 +149,6 @@ export function UsuariosPage() {
       pode_aprovar: user.pode_aprovar,
       pode_ver_todas_os: user.pode_ver_todas_os || false,
       menu_permissions: mergedPermissions
-      }
     });
     setError(null);
     setShowModal(true);
@@ -299,6 +302,7 @@ export function UsuariosPage() {
     { value: 'CRISPIM', label: 'Crispim' },
     { value: 'SOCIAL', label: 'Social Media' }
   ];
+
   return (
     <div className="max-w-7xl mx-auto">
       <div className="mb-8">
@@ -508,6 +512,7 @@ export function UsuariosPage() {
                     ideias: 'Ideias',
                     importar: 'Importar OS',
                     ideias_pendentes: 'Aprovar Ideias',
+                    tendencias: 'Tendências',
                     relatorios: 'Relatórios',
                     settings: 'Configurações',
                     usuarios: 'Usuários'
@@ -576,7 +581,7 @@ export function UsuariosPage() {
                   <label className="flex items-center space-x-3">
                     <input
                       type="radio"
-                     name="pode_ver_todas_os"
+                      name="pode_ver_todas_os"
                       checked={formData.pode_ver_todas_os}
                       onChange={(e) => {
                         if (e.target.checked) {
