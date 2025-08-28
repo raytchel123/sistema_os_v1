@@ -17,7 +17,6 @@ export interface MenuPermissions {
   ideias?: boolean;
   importar?: boolean;
   ideias_pendentes?: boolean;
-  tendencias?: boolean;
   relatorios?: boolean;
   settings?: boolean;
   usuarios?: boolean;

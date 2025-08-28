@@ -500,7 +500,6 @@ export function UsuariosPage() {
                     ideias: 'Ideias',
                     importar: 'Importar OS',
                     ideias_pendentes: 'Aprovar Ideias',
-                    tendencias: 'Tendências',
                     relatorios: 'Relatórios',
                     settings: 'Configurações',
                     usuarios: 'Usuários'
