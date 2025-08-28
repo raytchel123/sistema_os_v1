@@ -123,9 +123,11 @@ export function UsuariosPage() {
   const openEditModal = (user: User) => {
     setEditingUser(user);
     
-    // Carregar permissões existentes ou usar padrões
-    const existingPermissions = user.menu_permissions || {};
-    const defaultPermissions = {
+    console.log('🔍 DEBUG - User data for edit modal:', user);
+    console.log('🔍 DEBUG - User menu_permissions:', user.menu_permissions);
+    
+    // Usar permissões do usuário diretamente, sem mesclar com padrões
+    const userPermissions = user.menu_permissions || {
       kanban: true,
       lista: true,
       calendario: true,
@@ -139,8 +141,7 @@ export function UsuariosPage() {
       usuarios: false
     };
     
-    // Mesclar permissões existentes com padrões
-    const mergedPermissions = { ...defaultPermissions, ...existingPermissions };
+    console.log('🔍 DEBUG - Final permissions for modal:', userPermissions);
     
     setFormData({
       nome: user.nome,
@@ -148,7 +149,7 @@ export function UsuariosPage() {
       papel: user.papel,
       pode_aprovar: user.pode_aprovar,
       pode_ver_todas_os: user.pode_ver_todas_os || false,
-      menu_permissions: mergedPermissions
+      menu_permissions: userPermissions
     });
     setError(null);
     setShowModal(true);
