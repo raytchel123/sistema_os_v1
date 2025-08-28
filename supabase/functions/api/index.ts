@@ -1229,6 +1229,7 @@ Deno.serve(async (req) => {
         papel: body.papel,
         pode_aprovar: body.pode_aprovar || false,
         pode_ver_todas_os: body.pode_ver_todas_os || false,
+        menu_permissions: body.menu_permissions || false,
         senha_hash: hashedPassword,
         org_id: currentUser?.org_id || null
       };
