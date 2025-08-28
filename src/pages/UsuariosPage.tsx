@@ -87,6 +87,7 @@ export function UsuariosPage() {
         console.log('🔍 DEBUG - Users fetched from API:', data);
         data.forEach((user: any) => {
           console.log(`👤 User ${user.nome}:`, {
+            raw_user_data: user,
             menu_permissions: user.menu_permissions,
             pode_aprovar: user.pode_aprovar,
             pode_ver_todas_os: user.pode_ver_todas_os
@@ -132,12 +133,16 @@ export function UsuariosPage() {
     setEditingUser(user);
     
     console.log('🔍 DEBUG - User data for edit modal:', user);
-    console.log('🔍 DEBUG - User menu_permissions:', (user as any).menu_permissions);
+    console.log('🔍 DEBUG - User menu_permissions:', user.menu_permissions);
+    console.log('🔍 DEBUG - User object keys:', Object.keys(user));
+    console.log('🔍 DEBUG - Full user object:', JSON.stringify(user, null, 2));
     
     // Usar permissões do usuário diretamente do banco de dados
-    const userPermissions = (user as any).menu_permissions || {};
+    const userPermissions = user.menu_permissions || {};
     
     console.log('🔍 DEBUG - Raw permissions from DB:', userPermissions);
+    console.log('🔍 DEBUG - Type of userPermissions:', typeof userPermissions);
+    console.log('🔍 DEBUG - Is userPermissions an object?', typeof userPermissions === 'object');
     
     setFormData({
       nome: user.nome,
@@ -146,18 +151,34 @@ export function UsuariosPage() {
       pode_aprovar: user.pode_aprovar,
       pode_ver_todas_os: user.pode_ver_todas_os || false,
       menu_permissions: {
-        kanban: userPermissions.kanban === true,
-        lista: userPermissions.lista === true,
-        calendario: userPermissions.calendario === true,
-        biblioteca: userPermissions.biblioteca === true,
-        ideias: userPermissions.ideias === true,
-        importar: userPermissions.importar === true,
-        ideias_pendentes: userPermissions.ideias_pendentes === true,
-        relatorios: userPermissions.relatorios === true,
-        settings: userPermissions.settings === true,
-        usuarios: userPermissions.usuarios === true
+        kanban: Boolean(userPermissions?.kanban),
+        lista: Boolean(userPermissions?.lista),
+        calendario: Boolean(userPermissions?.calendario),
+        biblioteca: Boolean(userPermissions?.biblioteca),
+        ideias: Boolean(userPermissions?.ideias),
+        importar: Boolean(userPermissions?.importar),
+        ideias_pendentes: Boolean(userPermissions?.ideias_pendentes),
+        tendencias: Boolean(userPermissions?.tendencias),
+        relatorios: Boolean(userPermissions?.relatorios),
+        settings: Boolean(userPermissions?.settings),
+        usuarios: Boolean(userPermissions?.usuarios)
       }
     });
+    
+    console.log('🔍 DEBUG - Final formData.menu_permissions:', {
+      kanban: Boolean(userPermissions?.kanban),
+      lista: Boolean(userPermissions?.lista),
+      calendario: Boolean(userPermissions?.calendario),
+      biblioteca: Boolean(userPermissions?.biblioteca),
+      ideias: Boolean(userPermissions?.ideias),
+      importar: Boolean(userPermissions?.importar),
+      ideias_pendentes: Boolean(userPermissions?.ideias_pendentes),
+      tendencias: Boolean(userPermissions?.tendencias),
+      relatorios: Boolean(userPermissions?.relatorios),
+      settings: Boolean(userPermissions?.settings),
+      usuarios: Boolean(userPermissions?.usuarios)
+    });
+    
     setError(null);
     setShowModal(true);
   };
