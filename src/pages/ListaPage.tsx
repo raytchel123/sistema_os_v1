@@ -37,7 +37,8 @@ export function ListaPage() {
   const [filters, setFilters] = useState({
     marca: '',
     status: '',
-    prioridade: ''
+    prioridade: '',
+    atraso: ''
   });
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -51,7 +52,7 @@ export function ListaPage() {
 
   useEffect(() => {
     if (currentUserId !== null && ordens.length > 0) {
-      const filtered = userCanViewAll ? ordens : ordens.filter((os: any) => {
+      let filtered = userCanViewAll ? ordens : ordens.filter((os: any) => {
         // Se pode ver todas as OS, mostrar todas
         if (userCanViewAll) return true;
         
@@ -65,6 +66,22 @@ export function ListaPage() {
         // Verificar se é responsável atual ou criador
         return os.responsavel_atual === currentUserId || os.created_by === currentUserId;
       });
+      
+      // Aplicar filtro de atraso
+      if (filters.atraso) {
+        const now = new Date();
+        if (filters.atraso === 'sim') {
+          filtered = filtered.filter((os: any) => 
+            os.prazo && !isNaN(new Date(os.prazo).getTime()) && 
+            new Date(os.prazo) < now && os.status !== 'PUBLICADO'
+          );
+        } else if (filters.atraso === 'nao') {
+          filtered = filtered.filter((os: any) => 
+            !os.prazo || isNaN(new Date(os.prazo).getTime()) || 
+            new Date(os.prazo) >= now || os.status === 'PUBLICADO'
+          );
+        }
+      }
       
       console.log('🔍 ListaPage - Filtering OS:', {
         total: ordens.length,
