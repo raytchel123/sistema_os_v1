@@ -6,6 +6,19 @@ export interface User {
   pode_aprovar?: boolean;
   nome?: string;
   papel?: string;
+  menu_permissions?: {
+    kanban?: boolean;
+    lista?: boolean;
+    calendario?: boolean;
+    biblioteca?: boolean;
+    ideias?: boolean;
+    importar?: boolean;
+    ideias_pendentes?: boolean;
+    tendencias?: boolean;
+    relatorios?: boolean;
+    settings?: boolean;
+    usuarios?: boolean;
+  };
 }
 
 export interface AuthContextType {

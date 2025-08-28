@@ -19,6 +19,19 @@ interface UserFormData {
   pode_aprovar: boolean;
   pode_ver_todas_os: boolean;
   senha?: string;
+  menu_permissions: {
+    kanban: boolean;
+    lista: boolean;
+    calendario: boolean;
+    biblioteca: boolean;
+    ideias: boolean;
+    importar: boolean;
+    ideias_pendentes: boolean;
+    tendencias: boolean;
+    relatorios: boolean;
+    settings: boolean;
+    usuarios: boolean;
+  };
 }
 export function UsuariosPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -31,7 +44,20 @@ export function UsuariosPage() {
     papel: 'EDITOR',
     pode_aprovar: false,
     pode_ver_todas_os: false,
-    senha: ''
+    senha: '',
+    menu_permissions: {
+      kanban: true,
+      lista: true,
+      calendario: true,
+      biblioteca: true,
+      ideias: true,
+      importar: false,
+      ideias_pendentes: false,
+      tendencias: true,
+      relatorios: false,
+      settings: false,
+      usuarios: false
+    }
   });
   const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,7 +99,20 @@ export function UsuariosPage() {
       email: '',
       papel: 'EDITOR',
       pode_aprovar: false,
-      senha: ''
+      senha: '',
+      menu_permissions: {
+        kanban: true,
+        lista: true,
+        calendario: true,
+        biblioteca: true,
+        ideias: true,
+        importar: false,
+        ideias_pendentes: false,
+        tendencias: true,
+        relatorios: false,
+        settings: false,
+        usuarios: false
+      }
     });
     setError(null);
     setShowModal(true);
@@ -86,7 +125,20 @@ export function UsuariosPage() {
       email: user.email,
       papel: user.papel,
       pode_aprovar: user.pode_aprovar,
-      pode_ver_todas_os: user.pode_ver_todas_os || false
+      pode_ver_todas_os: user.pode_ver_todas_os || false,
+      menu_permissions: {
+        kanban: true,
+        lista: true,
+        calendario: true,
+        biblioteca: true,
+        ideias: true,
+        importar: false,
+        ideias_pendentes: false,
+        tendencias: true,
+        relatorios: false,
+        settings: false,
+        usuarios: false
+      }
     });
     setError(null);
     setShowModal(true);
@@ -101,7 +153,20 @@ export function UsuariosPage() {
       papel: 'EDITOR',
       pode_aprovar: false,
       pode_ver_todas_os: false,
-      senha: ''
+      senha: '',
+      menu_permissions: {
+        kanban: true,
+        lista: true,
+        calendario: true,
+        biblioteca: true,
+        ideias: true,
+        importar: false,
+        ideias_pendentes: false,
+        tendencias: true,
+        relatorios: false,
+        settings: false,
+        usuarios: false
+      }
     });
     setError(null);
   };
@@ -421,6 +486,46 @@ export function UsuariosPage() {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Permissões de Menu
+                </label>
+                <div className="grid grid-cols-2 gap-3 p-4 bg-gray-50 rounded-lg">
+                  {Object.entries({
+                    kanban: 'Kanban',
+                    lista: 'Lista',
+                    calendario: 'Planejamento',
+                    biblioteca: 'Biblioteca',
+                    ideias: 'Ideias',
+                    importar: 'Importar OS',
+                    ideias_pendentes: 'Aprovar Ideias',
+                    tendencias: 'Tendências',
+                    relatorios: 'Relatórios',
+                    settings: 'Configurações',
+                    usuarios: 'Usuários'
+                  }).map(([key, label]) => (
+                    <label key={key} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={formData.menu_permissions[key as keyof typeof formData.menu_permissions]}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          menu_permissions: {
+                            ...prev.menu_permissions,
+                            [key]: e.target.checked
+                          }
+                        }))}
+                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">{label}</span>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Selecione quais menus este usuário pode acessar
+                </p>
               </div>
 
               <div>
