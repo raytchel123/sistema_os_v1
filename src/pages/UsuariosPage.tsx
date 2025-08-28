@@ -119,24 +119,32 @@ export function UsuariosPage() {
 
   const openEditModal = (user: User) => {
     setEditingUser(user);
+    
+    // Carregar permissões existentes ou usar padrões
+    const existingPermissions = user.menu_permissions || {};
+    const defaultPermissions = {
+      kanban: true,
+      lista: true,
+      calendario: true,
+      biblioteca: true,
+      ideias: true,
+      importar: false,
+      ideias_pendentes: false,
+      relatorios: false,
+      settings: false,
+      usuarios: false
+    };
+    
+    // Mesclar permissões existentes com padrões
+    const mergedPermissions = { ...defaultPermissions, ...existingPermissions };
+    
     setFormData({
       nome: user.nome,
       email: user.email,
       papel: user.papel,
       pode_aprovar: user.pode_aprovar,
       pode_ver_todas_os: user.pode_ver_todas_os || false,
-      menu_permissions: user.menu_permissions || {
-        kanban: true,
-        lista: true,
-        calendario: true,
-        biblioteca: true,
-        ideias: true,
-        importar: false,
-        ideias_pendentes: false,
-        tendencias: true,
-        relatorios: false,
-        settings: false,
-        usuarios: false
+      menu_permissions: mergedPermissions
       }
     });
     setError(null);
