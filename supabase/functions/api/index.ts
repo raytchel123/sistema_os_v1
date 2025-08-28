@@ -1194,7 +1194,7 @@ Deno.serve(async (req) => {
     if (effectivePath === '/users' && req.method === 'GET') {
       const { data: users, error } = await supabaseClient
         .from('users')
-        .select('id, nome, email, papel, pode_aprovar,pode_ver_todas_os, criado_em')
+        .select('id, nome, email, papel, pode_aprovar,pode_ver_todas_os,menu_permissions, criado_em')
         .order('nome');
 
       if (error) {
