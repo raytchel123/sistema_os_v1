@@ -53,7 +53,6 @@ export function UsuariosPage() {
       ideias: true,
       importar: false,
       ideias_pendentes: false,
-      tendencias: true,
       relatorios: false,
       settings: false,
       usuarios: false

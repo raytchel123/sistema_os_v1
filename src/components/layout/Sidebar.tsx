@@ -34,7 +34,6 @@ const menuItems = [
   { to: '/ideias', icon: Lightbulb, label: 'Ideias', description: 'Transformar ideias em pautas', permission: 'ideias' },
   { to: '/importar', icon: Upload, label: 'Importar OS', description: 'Importar de arquivos com IA', permission: 'importar' },
   { to: '/ideias-pendentes', icon: CheckCircle, label: 'Aprovar Ideias', description: 'Aprovar ideias importadas', permission: 'ideias_pendentes' },
-  { to: '/tendencias', icon: TrendingUp, label: 'Tendências', description: 'Análise de performance e sugestões', permission: 'tendencias' },
   { to: '/relatorios', icon: BarChart3, label: 'Relatórios', description: 'Métricas e análises', permission: 'relatorios' },
   { to: '/settings', icon: Settings, label: 'Configurações', description: 'Providers e perfis', permission: 'settings' },
   { to: '/usuarios', icon: Users, label: 'Usuários', description: 'Gerenciar equipe', permission: 'usuarios' },
