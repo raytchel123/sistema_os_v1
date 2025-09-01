@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Save, Calendar, User, Tag, FileText, Link, Trash2, Copy, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
+import { X, Save, Calendar, User, Tag, FileText, Link, Trash2, Copy, Clock, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import { showToast } from '../ui/Toast';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -25,7 +25,7 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
     descricao: '',
     marca: '',
     objetivo: '',
-    tipo: '',contin
+    tipo: '',
     prioridade: '',
     data_publicacao_prevista: '',
     canais: [] as string[],
@@ -868,7 +868,7 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
                 </p>
               </div>
             </div>
-          }
+          )}
 
           {/* Mídia Tab */}
           {activeTab === 'media' && (
@@ -1003,8 +1003,7 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
                   </div>
                 </div>
               )}
-            </div>
-              ,
+
               <div className="bg-white rounded-lg border border-gray-200">
                 <div className="p-4 border-b border-gray-200">
                   <h3 className="font-medium text-gray-900 flex items-center">
@@ -1167,6 +1166,7 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
                   )}
                 </div>
               </div>
+            </div>
           )}
         </div>
       </div>
