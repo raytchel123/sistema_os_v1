@@ -804,7 +804,7 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
           )}
 
           {/* Roteiro Tab */}
-          {activeTab === 'script' && (
+         
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -848,7 +848,7 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
                 </p>
               </div>
             </div>
-          )}
+          
 
           {/* Mídia Tab */}
           {activeTab === 'media' && (
