@@ -56,7 +56,7 @@ class OSParser {
       const tipo = this.classifyType(titulo + ' ' + descricao);
       const prioridade = this.classifyPriority(titulo + ' ' + descricao);
 
-      // Extract media links
+      // Extract media link
       const mediaLinks = this.extractMediaLinks(section);
 
       // Default channels based on brand
