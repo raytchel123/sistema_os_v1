@@ -88,30 +88,16 @@ export function MinhasAprovacoesPage() {
   const checkUserPermissions = async () => {
     try {
       console.log('🔍 Checking user permissions in MinhasAprovacoesPage...');
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) {
-        console.log('❌ No session found');
+
+      if (!user?.id) {
+        console.log('❌ No user found');
         setUserCanApprove(false);
         return;
       }
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
-
-      const response = await fetch(`${apiUrl}/api`, { headers });
-      
-      if (response.ok) {
-        const userData = await response.json();
-        console.log('👤 MinhasAprovacoesPage user data:', userData);
-        setUserCanApprove(userData.pode_aprovar || false);
-        console.log('✅ MinhasAprovacoesPage userCanApprove set to:', userData.pode_aprovar);
-      } else {
-        const errorText = await response.text();
-        console.error('❌ MinhasAprovacoesPage API Error:', response.status, errorText);
-        setUserCanApprove(false);
-      }
+      console.log('👤 MinhasAprovacoesPage user data:', user);
+      setUserCanApprove(user.pode_aprovar || false);
+      console.log('✅ MinhasAprovacoesPage userCanApprove set to:', user.pode_aprovar);
     } catch (err) {
       console.error('Erro ao verificar permissões:', err);
       setUserCanApprove(false);
@@ -119,35 +105,30 @@ export function MinhasAprovacoesPage() {
   };
   
   const handleApprove = async () => {
-    if (!selectedOS) return;
-    
+    if (!selectedOS || !user?.org_id) return;
+
     const loadingToast = showToast.loading('Aprovando OS...');
     setActionLoading(true);
-    
+
     try {
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) {
-        throw new Error('Usuário não autenticado');
-      }
+      const { supabase } = await import('../lib/supabase');
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
+      const dataPublicacao = `${scheduleDate}T${scheduleTime}:00`;
 
-      // 1. Aprovar pelo Crispim
-      const approveResponse = await fetch(`${apiUrl}/api/ordens/${selectedOS.id}/approve`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          data_publicacao: scheduleDate,
-          horario: scheduleTime
+      const { error } = await supabase
+        .from('ordens_de_servico')
+        .update({
+          status: 'APROVADO',
+          data_publicacao_prevista: dataPublicacao,
+          aprovado_por: user.id,
+          aprovado_em: new Date().toISOString(),
+          atualizado_em: new Date().toISOString()
         })
-      });
+        .eq('id', selectedOS.id)
+        .eq('org_id', user.org_id);
 
-      if (!approveResponse.ok) {
-        const errorData = await approveResponse.json().catch(() => ({}));
-        throw new Error(`Erro ao aprovar OS (${approveResponse.status}): ${errorData.error || 'Erro desconhecido'}`);
+      if (error) {
+        throw new Error(`Erro ao aprovar OS: ${error.message}`);
       }
 
       showToast.success('OS aprovada com sucesso!');
@@ -163,31 +144,28 @@ export function MinhasAprovacoesPage() {
   };
 
   const handleReject = async () => {
-    if (!selectedOS || !rejectReason.trim()) return;
-    
+    if (!selectedOS || !rejectReason.trim() || !user?.org_id) return;
+
     const loadingToast = showToast.loading('Reprovando OS...');
     setActionLoading(true);
-    
+
     try {
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) {
-        throw new Error('Usuário não autenticado');
-      }
+      const { supabase } = await import('../lib/supabase');
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
+      const { error } = await supabase
+        .from('ordens_de_servico')
+        .update({
+          status: 'REPROVADO',
+          reprovado_por: user.id,
+          motivo_reprovacao: rejectReason,
+          reprovado_em: new Date().toISOString(),
+          atualizado_em: new Date().toISOString()
+        })
+        .eq('id', selectedOS.id)
+        .eq('org_id', user.org_id);
 
-      const response = await fetch(`${apiUrl}/api/ordens/${selectedOS.id}/reject`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ motivo: rejectReason })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(`Erro ao reprovar OS (${response.status}): ${errorData.error || 'Erro desconhecido'}`);
+      if (error) {
+        throw new Error(`Erro ao reprovar OS: ${error.message}`);
       }
 
       showToast.success('OS reprovada com sucesso!');
