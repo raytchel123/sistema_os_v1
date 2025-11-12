@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, DragEvent } from 'react';
 import { Calendar, ChevronLeft, ChevronRight, Plus, Wand2, Clock, Tag, Edit, Trash2, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format, addDays } from 'date-fns';
 import { supabase } from '../lib/supabase';
 import { showToast } from '../components/ui/Toast';
 import { PostDetailsModal } from '../components/planning/PostDetailsModal';
+import { useAuth } from '../contexts/AuthContext';
 
 interface PostSuggestion {
   id: string;
@@ -36,6 +37,7 @@ const dayNames = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', '
 
 export function PlanejamentoPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   // Move getStartOfWeek function before its usage
   const getStartOfWeek = (date: Date): Date => {
@@ -56,6 +58,7 @@ export function PlanejamentoPage() {
   const [selectedBrand, setSelectedBrand] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [draggedPost, setDraggedPost] = useState<PostSuggestion | null>(null);
 
   // Computed value for selectedWeek
   const selectedWeek = getStartOfWeek(currentDate);
@@ -103,24 +106,24 @@ export function PlanejamentoPage() {
   };
 
   const fetchBrands = async () => {
+    if (!user?.org_id) return;
+
     try {
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
+      const { data, error } = await supabase
+        .from('brands')
+        .select('*')
+        .eq('org_id', user.org_id)
+        .eq('is_active', true)
+        .order('name');
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
+      if (error) {
+        console.error('Erro ao carregar marcas:', error);
+        return;
+      }
 
-      const response = await fetch(`${apiUrl}/api/brands`, { headers });
-      
-      if (response.ok) {
-        const data = await response.json();
-        const activeBrands = data.filter((brand: any) => brand.is_active);
-        setBrands(activeBrands);
-        if (activeBrands.length > 0 && !selectedBrand) {
-          setSelectedBrand(activeBrands[0].code);
-        }
+      setBrands(data || []);
+      if (data && data.length > 0 && !selectedBrand) {
+        setSelectedBrand(data[0].code);
       }
     } catch (err) {
       console.error('Erro ao carregar marcas:', err);
@@ -290,17 +293,11 @@ export function PlanejamentoPage() {
   };
 
   const createOSFromPost = async (post: PostSuggestion) => {
+    if (!user?.org_id) return;
+
     const loadingToast = showToast.loading('Criando OS...');
-    
+
     try {
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
-
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
-
       const osData = {
         titulo: post.title,
         descricao: post.description,
@@ -315,33 +312,74 @@ export function PlanejamentoPage() {
         cta: post.cta,
         script_text: post.copy_final,
         legenda: post.copy_final,
-        categorias_criativos: [post.post_type === 'POST' ? 'Instagram Feed' : `Instagram ${post.post_type}`]
+        categorias_criativos: [post.post_type === 'POST' ? 'Instagram Feed' : `Instagram ${post.post_type}`],
+        org_id: user.org_id,
+        criado_por: user.id,
+        criado_em: new Date().toISOString(),
+        atualizado_em: new Date().toISOString()
       };
 
-      const response = await fetch(`${apiUrl}/api/ordens`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(osData)
-      });
+      const { error: osError } = await supabase
+        .from('ordens_de_servico')
+        .insert(osData);
 
-      if (response.ok) {
-        // Update suggestion status
-        await fetch(`${apiUrl}/planning-ai/suggestions/${post.id}`, {
-          method: 'PATCH',
-          headers,
-          body: JSON.stringify({ status: 'IN_PRODUCTION' })
-        });
-
-        showToast.success('OS criada com sucesso!');
-        closeDetailsModal();
-        fetchPostSuggestions(); // Refresh suggestions
-      } else {
-        showToast.error('Erro ao criar OS');
+      if (osError) {
+        throw new Error(osError.message);
       }
+
+      // Update suggestion status
+      const { error: updateError } = await supabase
+        .from('post_suggestions')
+        .update({ status: 'IN_PRODUCTION' })
+        .eq('id', post.id);
+
+      if (updateError) {
+        console.error('Erro ao atualizar status:', updateError);
+      }
+
+      showToast.success('OS criada com sucesso!');
+      closeDetailsModal();
+      await loadSuggestions();
     } catch (error) {
+      console.error('Erro ao criar OS:', error);
       showToast.error('Erro ao criar OS');
     } finally {
       showToast.dismiss(loadingToast);
+    }
+  };
+
+  const handleDragStart = (e: DragEvent<HTMLDivElement>, post: PostSuggestion) => {
+    setDraggedPost(post);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = async (e: DragEvent<HTMLDivElement>, targetDate: Date) => {
+    e.preventDefault();
+
+    if (!draggedPost) return;
+
+    const newDateStr = targetDate.toISOString().split('T')[0];
+
+    try {
+      const { error } = await supabase
+        .from('post_suggestions')
+        .update({ scheduled_date: newDateStr })
+        .eq('id', draggedPost.id);
+
+      if (error) throw error;
+
+      showToast.success('Post movido com sucesso!');
+      await loadSuggestions();
+    } catch (error) {
+      console.error('Erro ao mover post:', error);
+      showToast.error('Erro ao mover post');
+    } finally {
+      setDraggedPost(null);
     }
   };
 
@@ -433,7 +471,12 @@ export function PlanejamentoPage() {
             const isToday = day.toDateString() === new Date().toDateString();
             
             return (
-              <div key={index} className="bg-white min-h-[500px] p-3">
+              <div
+                key={index}
+                className="bg-white min-h-[500px] p-3"
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, day)}
+              >
                 {/* Day Header */}
                 <div className="mb-4 pb-2 border-b border-gray-100">
                   <div className="text-sm text-gray-600 mb-1">{dayNames[index]}</div>
@@ -450,7 +493,9 @@ export function PlanejamentoPage() {
                   {dayPosts.map((post) => (
                     <div
                       key={post.id}
-                      className="bg-gray-50 rounded-lg border border-gray-200 hover:border-purple-300 transition-colors cursor-pointer"
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, post)}
+                      className="bg-gray-50 rounded-lg border border-gray-200 hover:border-purple-300 transition-colors cursor-move"
                     >
                       {/* Status Badge */}
                       <div className="p-2">
