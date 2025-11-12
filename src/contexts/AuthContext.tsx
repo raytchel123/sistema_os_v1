@@ -4,132 +4,165 @@ import { AuthContextType, User } from '../types/auth';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const SESSION_KEY = 'os_conteudo_user_session';
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    const savedSession = localStorage.getItem(SESSION_KEY);
-    if (savedSession) {
-      try {
-        const userData = JSON.parse(savedSession);
-        setUser(userData);
-      } catch (e) {
-        localStorage.removeItem(SESSION_KEY);
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user as User | null);
+      setLoading(false);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setUser(session?.user as User | null);
+        setLoading(false);
+        setRefreshing(false);
       }
-    }
-    setLoading(false);
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const refreshSession = async () => {
-    return null;
-  };
+    if (refreshing) {
+      console.log('Already refreshing session, skipping...');
+      return null;
+    }
 
-  const signIn = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .maybeSingle();
-
+      setRefreshing(true);
+      const { data: { session }, error } = await supabase.auth.refreshSession();
+      
       if (error) {
-        console.error('Erro ao buscar usuário:', error);
-        return { error: 'Erro ao fazer login. Tente novamente.' };
+        console.log('Session refresh failed:', error.message);
+        
+        // Check for invalid refresh token errors
+        if (error.message.includes('refresh_token_not_found') || 
+            error.message.includes('Invalid Refresh Token')) {
+          console.log('Invalid refresh token detected, signing out...');
+          await supabase.auth.signOut();
+          setUser(null);
+        }
+        
+        return null;
       }
-
-      if (!data) {
-        return { error: 'Email ou senha incorretos.' };
+      
+      return session;
+    } catch (error: any) {
+      console.log('Session refresh error:', error.message);
+      
+      // Check for invalid refresh token errors in catch block too
+      if (error.message?.includes('refresh_token_not_found') || 
+          error.message?.includes('Invalid Refresh Token')) {
+        console.log('Invalid refresh token detected in catch, signing out...');
+        await supabase.auth.signOut();
+        setUser(null);
       }
-
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/api`;
-      const response = await fetch(`${apiUrl}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify({ email, password })
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        return { error: result.error || 'Email ou senha incorretos.' };
-      }
-
-      const userData = {
-        id: data.id,
-        email: data.email,
-        nome: data.nome,
-        papel: data.papel
-      } as User;
-
-      setUser(userData);
-      localStorage.setItem(SESSION_KEY, JSON.stringify(userData));
-
-      return {};
-    } catch (err: any) {
-      console.error('Erro no login:', err);
-      return { error: 'Erro de conexão. Tente novamente.' };
+      
+      return null;
+    } finally {
+      setRefreshing(false);
     }
   };
-
-  const signUp = async (email: string, password: string, metadata?: { nome?: string }) => {
+  const signIn = async (email: string, password: string) => {
     try {
-      const { data: existingUser } = await supabase
-        .from('users')
-        .select('id')
-        .eq('email', email)
-        .maybeSingle();
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-      if (existingUser) {
-        return { error: 'Este email já está cadastrado.' };
-      }
+    if (error) {
+        if (error.message.includes('rate_limit') || error.message.includes('Request rate limit')) {
+          return { error: 'Muitas tentativas de login. Aguarde alguns minutos e tente novamente.' };
+        }
+        if (error.message.includes('Invalid login credentials')) {
+          return { error: 'Email ou senha incorretos. Verifique suas credenciais.' };
+        }
+      return { error: error.message };
+    }
 
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/api`;
-      const response = await fetch(`${apiUrl}/auth/signup`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify({
-          email,
-          password,
-          nome: metadata?.nome || email.split('@')[0]
-        })
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        return { error: result.error || 'Erro ao criar conta.' };
-      }
-
-      const userData = {
-        id: result.user.id,
-        email: result.user.email,
-        nome: result.user.nome,
-        papel: result.user.papel
-      } as User;
-
-      setUser(userData);
-      localStorage.setItem(SESSION_KEY, JSON.stringify(userData));
-
-      return {};
+    // Set user immediately after successful login
+    if (data.user) {
+      setUser(data.user as User);
+    }
     } catch (err: any) {
-      console.error('Erro no cadastro:', err);
+      if (err.message?.includes('rate_limit')) {
+        return { error: 'Muitas tentativas de login. Aguarde alguns minutos e tente novamente.' };
+      }
+      return { error: 'Erro de conexão. Tente novamente.' };
+    }
+    return {};
+  };
+
+  const signUp = async (email: string, password: string) => {
+    try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          nome: email.split('@')[0] // Nome padrão baseado no email
+        }
+      }
+    });
+
+    if (error) {
+      if (error.message.includes('rate_limit') || error.message.includes('Request rate limit')) {
+        return { error: 'Muitas tentativas de cadastro. Aguarde alguns minutos e tente novamente.' };
+      }
+      return { error: error.message };
+    }
+
+    // Create user in our custom users table with organization
+    if (data.user) {
+      try {
+        const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/api`;
+        const response = await fetch(`${apiUrl}/users/provision`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({
+            user_id: data.user.id,
+            email: data.user.email,
+            nome: email.split('@')[0]
+          })
+        });
+        
+        if (!response.ok) {
+          console.error('Erro ao provisionar usuário:', response.status);
+        }
+      } catch (provisionError) {
+        console.error('Erro ao provisionar usuário:', provisionError);
+      }
+    }
+
+    return {};
+    } catch (err: any) {
       return { error: 'Erro de conexão. Tente novamente.' };
     }
   };
 
   const signOut = async () => {
-    setUser(null);
-    localStorage.removeItem(SESSION_KEY);
+    try {
+      await supabase.auth.signOut();
+    } catch (error: any) {
+      // If session doesn't exist on server, clear local state anyway
+      if (error?.message?.includes('session_not_found') || 
+          error?.message?.includes('Session from session_id claim in JWT does not exist')) {
+        console.log('Session already invalid on server, clearing local state');
+        setUser(null);
+        return;
+      }
+      // Re-throw other errors
+      throw error;
+    }
   };
 
   const value = {
