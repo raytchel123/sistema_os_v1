@@ -211,7 +211,7 @@ export function UsuariosPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.nome.trim() || !formData.email.trim()) {
       setError('Nome e email são obrigatórios');
       return;
@@ -222,17 +222,16 @@ export function UsuariosPage() {
       return;
     }
 
+    if (!user?.org_id) {
+      setError('Usuário não autenticado');
+      return;
+    }
+
     setFormLoading(true);
     setError(null);
 
     try {
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
-
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
+      const { supabase } = await import('../lib/supabase');
 
       const payload = {
         nome: formData.nome.trim(),
@@ -241,40 +240,46 @@ export function UsuariosPage() {
         pode_aprovar: formData.pode_aprovar,
         pode_ver_todas_os: formData.pode_ver_todas_os,
         menu_permissions: formData.menu_permissions,
-        menu_permissions: formData.menu_permissions,
-        ...(formData.senha && { senha: formData.senha })
+        org_id: user.org_id,
+        atualizado_em: new Date().toISOString()
       };
 
       console.log('🚀 DEBUG - Payload being sent:', payload);
-      let response;
+
       if (editingUser) {
         // Update user
-        response = await fetch(`${apiUrl}/api/users/${editingUser.id}`, {
-          method: 'PUT',
-          headers,
-          body: JSON.stringify(payload)
-        });
+        const updateData: any = { ...payload };
+        if (formData.senha) {
+          updateData.senha = formData.senha;
+        }
+
+        const { error } = await supabase
+          .from('users')
+          .update(updateData)
+          .eq('id', editingUser.id)
+          .eq('org_id', user.org_id);
+
+        if (error) {
+          throw new Error(error.message);
+        }
       } else {
         // Create user
-        response = await fetch(`${apiUrl}/api/users`, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(payload)
-        });
+        const { error } = await supabase
+          .from('users')
+          .insert([{
+            ...payload,
+            senha: formData.senha,
+            criado_em: new Date().toISOString()
+          }]);
+
+        if (error) {
+          throw new Error(error.message);
+        }
       }
 
-      if (response.ok) {
-        await fetchUsers();
-        closeModal();
-        showToast.success(editingUser ? 'Usuário atualizado com sucesso!' : 'Usuário criado com sucesso!');
-      } else {
-        let msg = `HTTP ${response.status}`;
-        try {
-          const j = await response.json();
-          if (j?.error) msg += ` – ${j.error}`;
-        } catch {}
-        setError(`Erro ao salvar usuário: ${msg}`);
-      }
+      await fetchUsers();
+      closeModal();
+      showToast.success(editingUser ? 'Usuário atualizado com sucesso!' : 'Usuário criado com sucesso!');
     } catch (err) {
       setError(`Erro ao salvar usuário: ${err instanceof Error ? err.message : 'Erro de conexão'}`);
       console.error('Erro:', err);
@@ -283,40 +288,36 @@ export function UsuariosPage() {
     }
   };
 
-  const handleDelete = async (user: User) => {
-    if (!window.confirm(`Tem certeza que deseja excluir o usuário "${user.nome}"?`)) {
+  const handleDelete = async (userToDelete: User) => {
+    if (!window.confirm(`Tem certeza que deseja excluir o usuário "${userToDelete.nome}"?`)) {
+      return;
+    }
+
+    if (!user?.org_id) {
+      showToast.error('Usuário não autenticado');
       return;
     }
 
     const loadingToast = showToast.loading('Excluindo usuário...');
 
     try {
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
+      const { supabase } = await import('../lib/supabase');
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', userToDelete.id)
+        .eq('org_id', user.org_id);
 
-      const response = await fetch(`${apiUrl}/api/users/${user.id}`, {
-        method: 'DELETE',
-        headers
-      });
-
-      if (response.ok) {
-        await fetchUsers();
-        showToast.success('Usuário excluído com sucesso!');
-      } else {
-        let msg = `HTTP ${response.status}`;
-        try {
-          const j = await response.json();
-          if (j?.error) msg += ` – ${j.error}`;
-        } catch {}
-        showToast.error(`Erro ao excluir usuário: ${msg}`);
+      if (error) {
+        throw new Error(error.message);
       }
+
+      await fetchUsers();
+      showToast.success('Usuário excluído com sucesso!');
     } catch (err) {
-      showToast.error(`Erro ao excluir usuário: ${err instanceof Error ? err.message : 'Erro de conexão'}`);
+      const errorMessage = err instanceof Error ? err.message : 'Erro desconhecido';
+      showToast.error(`Erro ao excluir usuário: ${errorMessage}`);
       console.error('Erro:', err);
     } finally {
       showToast.dismiss(loadingToast);
