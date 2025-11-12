@@ -98,88 +98,89 @@ export function ListaPage() {
   const checkUserPermissions = async () => {
     try {
       console.log('🔍 Checking user permissions in ListaPage...');
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
-
-      const response = await fetch(`${apiUrl}/api`, { headers });
-      
-      if (response.ok) {
-        const userData = await response.json();
-        console.log('👤 ListaPage user data:', userData);
-        setUserCanApprove(userData.pode_aprovar || false);
-        setUserCanViewAll(userData.pode_ver_todas_os || false);
-        setCurrentUserId(userData.id);
-        console.log('✅ ListaPage userCanApprove set to:', userData.pode_aprovar);
-        console.log('✅ ListaPage userCanViewAll set to:', userData.pode_ver_todas_os);
-      } else {
-        const errorText = await response.text();
-        console.error('❌ ListaPage API Error:', response.status, errorText);
+      if (!user?.id) {
+        console.log('❌ No user found');
+        return;
       }
+
+      console.log('👤 ListaPage user data:', user);
+      setUserCanApprove(user.pode_aprovar || false);
+      setUserCanViewAll(user.pode_ver_todas_os || false);
+      setCurrentUserId(user.id);
+      console.log('✅ ListaPage userCanApprove set to:', user.pode_aprovar);
+      console.log('✅ ListaPage userCanViewAll set to:', user.pode_ver_todas_os);
     } catch (err) {
       console.error('Erro ao verificar permissões:', err);
     }
   };
 
   const fetchOrdens = async () => {
+    if (!user?.org_id) return;
+
     try {
       setLoading(true);
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
+      const { supabase } = await import('../lib/supabase');
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
+      let query = supabase
+        .from('ordens_de_servico')
+        .select('*')
+        .eq('org_id', user.org_id);
 
-      const params = new URLSearchParams();
-      if (filters.marca) params.append('marca', filters.marca);
-      if (filters.status) params.append('status', filters.status);
-      if (filters.prioridade) params.append('prioridade', filters.prioridade);
+      if (filters.marca) query = query.eq('marca', filters.marca);
+      if (filters.status) query = query.eq('status', filters.status);
+      if (filters.prioridade) query = query.eq('prioridade', filters.prioridade);
 
-      const response = await fetch(`${apiUrl}/api/ordens?${params}`, { headers });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setOrdens(data);
+      query = query.order('criado_em', { ascending: false });
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Erro ao carregar ordens:', error);
+        showToast.error('Erro ao carregar ordens');
+        return;
       }
+
+      console.log('✅ OS carregadas:', data?.length || 0);
+      setOrdens(data || []);
     } catch (err) {
       console.error('Erro ao carregar ordens:', err);
+      showToast.error('Erro ao carregar ordens');
     } finally {
       setLoading(false);
     }
   };
 
   const openOSDrawer = async (osId: string) => {
+    if (!user?.org_id) return;
+
     try {
       console.log('🔍 ListaPage - Opening drawer for OS:', osId);
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
+      const { supabase } = await import('../lib/supabase');
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
+      const { data: osData, error } = await supabase
+        .from('ordens_de_servico')
+        .select('*')
+        .eq('id', osId)
+        .eq('org_id', user.org_id)
+        .maybeSingle();
 
-      const response = await fetch(`${apiUrl}/api/ordens/${osId}`, { headers });
-      
-      if (response.ok) {
-        const osData = await response.json();
-        console.log('📦 ListaPage - Raw API response:', osData);
-        
-        setSelectedOS(osData);
-        setIsDrawerOpen(true);
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Erro ao carregar OS:', response.status, errorData);
-        showToast.error(`Erro ao carregar OS (${response.status}): ${errorData.error || 'Erro desconhecido'}`);
+      if (error) {
+        console.error('Erro ao carregar OS:', error);
+        showToast.error('Erro ao carregar OS');
+        return;
       }
+
+      if (!osData) {
+        showToast.error('OS não encontrada');
+        return;
+      }
+
+      console.log('📦 ListaPage - Raw API response:', osData);
+      setSelectedOS(osData);
+      setIsDrawerOpen(true);
     } catch (err) {
-      console.error('Erro ao carregar OS:', err);
+      console.error('Erro ao abrir drawer:', err);
       showToast.error('Erro ao carregar OS');
     }
   };
@@ -194,30 +195,31 @@ export function ListaPage() {
   };
 
   const handleApprove = async (osId: string) => {
+    if (!user?.org_id) return;
+
     setActionLoading(osId);
     const loadingToast = showToast.loading('Aprovando OS...');
-    
+
     try {
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
+      const { supabase } = await import('../lib/supabase');
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
+      const { error } = await supabase
+        .from('ordens_de_servico')
+        .update({
+          status: 'APROVADO',
+          aprovado_por: user.id,
+          aprovado_em: new Date().toISOString(),
+          atualizado_em: new Date().toISOString()
+        })
+        .eq('id', osId)
+        .eq('org_id', user.org_id);
 
-      const response = await fetch(`${apiUrl}/api/ordens/${osId}/approve`, {
-        method: 'POST',
-        headers
-      });
-
-      if (response.ok) {
-        showToast.success('OS aprovada com sucesso!');
-        fetchOrdens(); // Refresh list
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        showToast.error(`Erro ao aprovar OS (${response.status}): ${errorData.error || 'Erro desconhecido'}`);
+      if (error) {
+        throw new Error(error.message);
       }
+
+      showToast.success('OS aprovada com sucesso!');
+      fetchOrdens();
     } catch (err) {
       showToast.error(`Erro ao aprovar OS: ${err instanceof Error ? err.message : 'Erro de conexão'}`);
     } finally {
@@ -228,33 +230,32 @@ export function ListaPage() {
 
   const handleReject = async (osId: string) => {
     const motivo = prompt('Motivo da reprovação:');
-    if (!motivo) return;
+    if (!motivo || !user?.org_id) return;
 
     setActionLoading(osId);
     const loadingToast = showToast.loading('Reprovando OS...');
-    
+
     try {
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
+      const { supabase } = await import('../lib/supabase');
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
+      const { error } = await supabase
+        .from('ordens_de_servico')
+        .update({
+          status: 'REPROVADO',
+          reprovado_por: user.id,
+          motivo_reprovacao: motivo,
+          reprovado_em: new Date().toISOString(),
+          atualizado_em: new Date().toISOString()
+        })
+        .eq('id', osId)
+        .eq('org_id', user.org_id);
 
-      const response = await fetch(`${apiUrl}/api/ordens/${osId}/reject`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ motivo })
-      });
-
-      if (response.ok) {
-        showToast.success('OS reprovada com sucesso!');
-        fetchOrdens(); // Refresh list
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        showToast.error(`Erro ao reprovar OS (${response.status}): ${errorData.error || 'Erro desconhecido'}`);
+      if (error) {
+        throw new Error(error.message);
       }
+
+      showToast.success('OS reprovada com sucesso!');
+      fetchOrdens();
     } catch (err) {
       showToast.error(`Erro ao reprovar OS: ${err instanceof Error ? err.message : 'Erro de conexão'}`);
     } finally {
@@ -268,30 +269,26 @@ export function ListaPage() {
       return;
     }
 
+    if (!user?.org_id) return;
+
     setActionLoading(osId);
     const loadingToast = showToast.loading('Removendo OS...');
-    
+
     try {
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
+      const { supabase } = await import('../lib/supabase');
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
+      const { error } = await supabase
+        .from('ordens_de_servico')
+        .delete()
+        .eq('id', osId)
+        .eq('org_id', user.org_id);
 
-      const response = await fetch(`${apiUrl}/api/ordens/${osId}`, {
-        method: 'DELETE',
-        headers
-      });
-
-      if (response.ok) {
-        showToast.success('OS removida com sucesso!');
-        fetchOrdens(); // Refresh list
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        showToast.error(`Erro ao remover OS (${response.status}): ${errorData.error || 'Erro desconhecido'}`);
+      if (error) {
+        throw new Error(error.message);
       }
+
+      showToast.success('OS removida com sucesso!');
+      fetchOrdens();
     } catch (err) {
       showToast.error(`Erro ao remover OS: ${err instanceof Error ? err.message : 'Erro de conexão'}`);
     } finally {
