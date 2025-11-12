@@ -107,24 +107,30 @@ export function BibliotecaPage() {
   };
 
   const fetchPostedOS = async () => {
+    if (!user?.org_id) return;
+
     try {
       setLoading(true);
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
+      const { supabase } = await import('../lib/supabase');
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
+      const { data, error } = await supabase
+        .from('ordens_de_servico')
+        .select('*')
+        .eq('org_id', user.org_id)
+        .eq('status', 'PUBLICADO')
+        .order('data_publicacao_prevista', { ascending: false });
 
-      const response = await fetch(`${apiUrl}/api/ordens?status=PUBLICADO`, { headers });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setItems(data);
+      if (error) {
+        console.error('Erro ao carregar biblioteca:', error);
+        showToast.error('Erro ao carregar biblioteca');
+        return;
       }
+
+      console.log('✅ OS Publicadas carregadas:', data?.length || 0);
+      setItems(data || []);
     } catch (err) {
       console.error('Erro ao carregar biblioteca:', err);
+      showToast.error('Erro ao carregar biblioteca');
     } finally {
       setLoading(false);
     }
@@ -225,43 +231,39 @@ export function BibliotecaPage() {
   };
 
   const duplicateAsNewOS = async (originalOS: PostedOS) => {
+    if (!user?.org_id) return;
+
     const loadingToast = showToast.loading('Duplicando OS...');
-    
+
     try {
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
+      const { supabase } = await import('../lib/supabase');
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
-
-      // Create new OS based on the original
       const newOSData = {
         titulo: `${originalOS.titulo} (Cópia)`,
         marca: originalOS.marca,
         canais: originalOS.canais,
-        // Reset status and dates
         status: 'ROTEIRO',
         data_publicacao_prevista: null,
-        // Keep structure but clear final outputs
         criativos_prontos_links: [],
-        midia_bruta_links: []
+        midia_bruta_links: [],
+        org_id: user.org_id,
+        criado_por: user.id,
+        criado_em: new Date().toISOString(),
+        atualizado_em: new Date().toISOString()
       };
 
-      const response = await fetch(`${apiUrl}/api/ordens`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(newOSData)
-      });
+      const { error } = await supabase
+        .from('ordens_de_servico')
+        .insert(newOSData);
 
-      if (response.ok) {
-        showToast.success('OS duplicada com sucesso!');
-        navigate('/kanban');
-      } else {
-        showToast.error('Erro ao duplicar OS');
+      if (error) {
+        throw new Error(error.message);
       }
+
+      showToast.success('OS duplicada com sucesso!');
+      navigate('/kanban');
     } catch (err) {
+      console.error('Erro ao duplicar OS:', err);
       showToast.error('Erro ao duplicar OS');
     } finally {
       showToast.dismiss(loadingToast);
@@ -269,20 +271,15 @@ export function BibliotecaPage() {
   };
 
   const createOSFromInstagramPost = async (post: InstagramPost) => {
-    const loadingToast = showToast.loading('Criando OS a partir do post...');
-    
-    try {
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
+    if (!user?.org_id) return;
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
+    const loadingToast = showToast.loading('Criando OS a partir do post...');
+
+    try {
+      const { supabase } = await import('../lib/supabase');
 
       const selectedBrandData = brands.find(b => b.id === selectedBrand);
-      
-      // Create new OS based on Instagram post
+
       const newOSData = {
         titulo: `Repost: ${post.caption.split('\n')[0].substring(0, 50)}...`,
         descricao: post.caption,
@@ -294,23 +291,25 @@ export function BibliotecaPage() {
         prioridade: 'MEDIUM',
         legenda: post.caption,
         final_media_links: [post.permalink],
-        categorias_criativos: [post.media_type === 'VIDEO' ? 'Instagram Reels' : 'Instagram Feed']
+        categorias_criativos: [post.media_type === 'VIDEO' ? 'Instagram Reels' : 'Instagram Feed'],
+        org_id: user.org_id,
+        criado_por: user.id,
+        criado_em: new Date().toISOString(),
+        atualizado_em: new Date().toISOString()
       };
 
-      const response = await fetch(`${apiUrl}/api/ordens`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(newOSData)
-      });
+      const { error } = await supabase
+        .from('ordens_de_servico')
+        .insert(newOSData);
 
-      if (response.ok) {
-        showToast.success('OS criada com sucesso a partir do post do Instagram!');
-        navigate('/kanban');
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        showToast.error(`Erro ao criar OS: ${errorData.error || 'Erro desconhecido'}`);
+      if (error) {
+        throw new Error(error.message);
       }
+
+      showToast.success('OS criada com sucesso a partir do post do Instagram!');
+      navigate('/kanban');
     } catch (err) {
+      console.error('Erro ao criar OS:', err);
       showToast.error('Erro ao criar OS');
     } finally {
       showToast.dismiss(loadingToast);
