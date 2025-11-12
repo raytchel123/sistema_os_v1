@@ -56,72 +56,22 @@ export function Sidebar() {
   const [showPassword, setShowPassword] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
 
-  // Get user role from database
+  // Get user role from context
   useEffect(() => {
-    const fetchUserRole = async () => {
-      if (user && user.email) {
-        try {
-          console.log('🔍 Fetching user role for:', user.email);
-          
-          // Get current session without forcing refresh
-          const { data: { session } } = await (await import('../../lib/supabase')).supabase.auth.getSession();
-          
-          if (session) {
-            console.log('🔑 Session found, making API call...');
-            const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/api`, {
-              headers: {
-                'Authorization': `Bearer ${session.access_token}`,
-                'Content-Type': 'application/json',
-              }
-            });
-            
-            console.log('📡 API Response status:', response.status);
-            
-            if (response.ok) {
-              const userData = await response.json();
-              console.log('👤 User data received:', userData);
-              setUserRole(userData.papel);
-              setUserCanApprove(userData.pode_aprovar);
-              setUserPermissions(userData.menu_permissions || {});
-              setProfileData(userData);
-              console.log('🔍 APPROVAL DEBUG:', { 
-                email: user.email,
-                papel: userData.papel, 
-                pode_aprovar: userData.pode_aprovar,
-                userCanApprove: userData.pode_aprovar,
-                shouldShowMenu: userData.pode_aprovar === true,
-                menuWillShow: userData.pode_aprovar ? 'YES' : 'NO',
-                menuPermissions: userData.menu_permissions
-              });
-            } else if (response.status === 401) {
-              console.log('🔄 Token expired, trying refresh...');
-              const { data: refreshData } = await (await import('../../lib/supabase')).supabase.auth.refreshSession();
-              
-              if (refreshData?.session) {
-                // Retry with fresh token
-                const retryResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/api`, {
-                  headers: {
-                    'Authorization': `Bearer ${refreshData.session.access_token}`,
-                    'Content-Type': 'application/json',
-                  }
-                });
-                
-                if (retryResponse.ok) {
-                  const userData = await retryResponse.json();
-                  setUserRole(userData.papel);
-                  setUserCanApprove(userData.pode_aprovar);
-                  setUserPermissions(userData.menu_permissions || {});
-                  setProfileData(userData);
-                }
-              }
-            }
-          }
-        } catch (error) {
-          console.error('❌ Error fetching user role:', error);
-        }
-      }
-    };
-    fetchUserRole();
+    if (user) {
+      console.log('👤 Setting user permissions from context:', user);
+      setUserRole(user.papel || null);
+      setUserCanApprove(user.pode_aprovar || false);
+      setUserPermissions(user.menu_permissions || {});
+      setProfileData(user);
+
+      console.log('🔍 User menu permissions:', {
+        email: user.email,
+        papel: user.papel,
+        pode_aprovar: user.pode_aprovar,
+        menu_permissions: user.menu_permissions
+      });
+    }
   }, [user]);
 
   const toggleSidebar = () => setIsOpen(!isOpen);
@@ -203,10 +153,13 @@ export function Sidebar() {
   const filteredMenuItems = menuItems.filter(item => {
     // Always show basic menus if no permissions are set
     if (!userPermissions || Object.keys(userPermissions).length === 0) {
+      console.log('⚠️ No permissions found, showing basic menus only');
       return ['kanban', 'lista', 'calendario'].includes(item.permission);
     }
-    
-    return userPermissions[item.permission as keyof MenuPermissions] === true;
+
+    const hasPermission = userPermissions[item.permission as keyof MenuPermissions] === true;
+    console.log(`🔑 Permission check - ${item.permission}:`, hasPermission);
+    return hasPermission;
   });
 
   const allMenuItems = [

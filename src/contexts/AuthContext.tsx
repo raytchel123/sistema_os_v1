@@ -67,6 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       console.log('Login bem-sucedido:', data.nome, 'org_id:', data.org_id);
+      console.log('📋 Menu permissions from DB:', data.menu_permissions);
 
       const userData = {
         id: data.id,
@@ -79,6 +80,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         menu_permissions: data.menu_permissions,
         created_at: data.criado_em
       } as User;
+
+      console.log('👤 User object created:', userData);
 
       setUser(userData);
       localStorage.setItem(SESSION_KEY, JSON.stringify(userData));
