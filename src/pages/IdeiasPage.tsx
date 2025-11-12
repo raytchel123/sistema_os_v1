@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { Lightbulb, Wand2, Calendar, FileText, Users, Clock, Target, Hash, Sparkles, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { showToast } from '../components/ui/Toast';
+import { useAuth } from '../contexts/AuthContext';
 
 interface GeneratedPauta {
   titulo: string;
@@ -44,6 +45,7 @@ const marcaCores: Record<string, string> = {
 
 export function IdeiasPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [marcas, setMarcas] = useState<any[]>([]);
   const [marcasLoading, setMarcasLoading] = useState(true);
   const [selectedMarca, setSelectedMarca] = useState<string>('');
@@ -62,34 +64,38 @@ export function IdeiasPage() {
   const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
 
   useEffect(() => {
-    fetchMarcas();
-  }, []);
+    if (user) {
+      fetchMarcas();
+    }
+  }, [user]);
 
   const fetchMarcas = async () => {
+    if (!user?.org_id) return;
+
     try {
       setMarcasLoading(true);
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
+      const { supabase } = await import('../lib/supabase');
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
+      const { data, error } = await supabase
+        .from('brands')
+        .select('*')
+        .eq('org_id', user.org_id)
+        .eq('is_active', true)
+        .order('name');
 
-      const response = await fetch(`${apiUrl}/api/brands`, { headers });
-      
-      if (response.ok) {
-        const data = await response.json();
-        const marcasFormatadas = data
-          .filter((brand: any) => brand.is_active)
-          .map((brand: any) => ({
-            id: brand.code,
-            nome: brand.name,
-            cor: marcaCores[brand.code] || 'from-gray-500 to-gray-600',
-            descricao: brand.description || 'Sem descrição'
-          }));
-        setMarcas(marcasFormatadas);
+      if (error) {
+        console.error('Erro ao carregar marcas:', error);
+        showToast.error('Erro ao carregar marcas');
+        return;
       }
+
+      const marcasFormatadas = (data || []).map((brand: any) => ({
+        id: brand.code,
+        nome: brand.name,
+        cor: marcaCores[brand.code] || 'from-gray-500 to-gray-600',
+        descricao: brand.description || 'Sem descrição'
+      }));
+      setMarcas(marcasFormatadas);
     } catch (err) {
       console.error('Erro ao carregar marcas:', err);
       showToast.error('Erro ao carregar marcas');

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Archive, Search, Copy, ExternalLink, Filter, Calendar, Tag, RefreshCw, Instagram, Eye, Heart, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { showToast } from '../components/ui/Toast';
+import { useAuth } from '../contexts/AuthContext';
 
 interface PostedOS {
   id: string;
@@ -42,6 +43,7 @@ interface Brand {
 }
 
 export function BibliotecaPage() {
+  const { user } = useAuth();
   const [items, setItems] = useState<PostedOS[]>([]);
   const [instagramPosts, setInstagramPosts] = useState<InstagramPost[]>([]);
   const [filteredItems, setFilteredItems] = useState<PostedOS[]>([]);
@@ -61,9 +63,11 @@ export function BibliotecaPage() {
   const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
 
   useEffect(() => {
-    fetchBrands();
-    fetchPostedOS();
-  }, []);
+    if (user) {
+      fetchBrands();
+      fetchPostedOS();
+    }
+  }, [user]);
 
   useEffect(() => {
     filterItems();
@@ -76,26 +80,26 @@ export function BibliotecaPage() {
   }, [selectedBrand, activeTab]);
 
   const fetchBrands = async () => {
+    if (!user?.org_id) return;
+
     try {
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
+      const { supabase } = await import('../lib/supabase');
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
+      const { data, error } = await supabase
+        .from('brands')
+        .select('*')
+        .eq('org_id', user.org_id)
+        .eq('is_active', true)
+        .order('name');
 
-      const response = await fetch(`${apiUrl}/api/brands`, { headers });
-      
-      if (response.ok) {
-        const data = await response.json();
-        const activeBrands = data.filter((brand: Brand) => brand.is_active);
-        setBrands(activeBrands);
-        
-        // Auto-select first brand if none selected
-        if (activeBrands.length > 0 && !selectedBrand) {
-          setSelectedBrand(activeBrands[0].id);
-        }
+      if (error) {
+        console.error('Erro ao carregar marcas:', error);
+        return;
+      }
+
+      setBrands(data || []);
+      if (data && data.length > 0 && !selectedBrand) {
+        setSelectedBrand(data[0].id);
       }
     } catch (err) {
       console.error('Erro ao carregar marcas:', err);

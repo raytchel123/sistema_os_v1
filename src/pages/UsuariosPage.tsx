@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Users, Plus, Edit, Trash2, Shield, X, Save } from 'lucide-react';
 import { showToast } from '../components/ui/Toast';
+import { useAuth } from '../contexts/AuthContext';
 
 interface User {
   id: string;
@@ -35,6 +36,7 @@ interface UserFormData {
 }
 
 export function UsuariosPage() {
+  const { user } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -66,29 +68,32 @@ export function UsuariosPage() {
   const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    if (user) {
+      fetchUsers();
+    }
+  }, [user]);
 
   const fetchUsers = async () => {
+    if (!user?.org_id) return;
+
     try {
       setLoading(true);
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
+      const { supabase } = await import('../lib/supabase');
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('org_id', user.org_id)
+        .order('criado_em', { ascending: false });
 
-      const response = await fetch(`${apiUrl}/api/users`, { headers });
-      
-      if (response.ok) {
-        const data = await response.json();
-        data.forEach((user: any) => {
-          
-        });
-        setUsers(data);
+      if (error) {
+        console.error('Erro ao carregar usuários:', error);
+        showToast.error('Erro ao carregar usuários');
+        return;
       }
+
+      console.log('👥 Usuários carregados:', data?.length || 0);
+      setUsers(data || []);
     } catch (err) {
       console.error('Erro ao carregar usuários:', err);
     } finally {

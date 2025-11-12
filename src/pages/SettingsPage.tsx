@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Settings, Key, TestTube, CheckCircle, XCircle, Eye, EyeOff, Save, Loader, Building, Plus, Edit, Trash2, X } from 'lucide-react';
 import { showToast } from '../components/ui/Toast';
+import { useAuth } from '../contexts/AuthContext';
 
 interface TokenConfig {
   platform: string;
@@ -52,6 +53,7 @@ const TOKEN_CONFIGS: TokenConfig[] = [
 ];
 
 export function SettingsPage() {
+  const { user } = useAuth();
   const [brands, setBrands] = useState<Brand[]>([]);
   const [selectedBrand, setSelectedBrand] = useState<string>('');
   const [tokens, setTokens] = useState<Record<string, string>>({});
@@ -76,8 +78,10 @@ export function SettingsPage() {
   const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
 
   useEffect(() => {
-    fetchBrands();
-  }, []);
+    if (user) {
+      fetchBrands();
+    }
+  }, [user]);
 
   useEffect(() => {
     if (selectedBrand) {
@@ -86,27 +90,30 @@ export function SettingsPage() {
   }, [selectedBrand]);
 
   const fetchBrands = async () => {
+    if (!user?.org_id) return;
+
     try {
       setBrandsLoading(true);
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
+      const { supabase } = await import('../lib/supabase');
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
+      const { data, error } = await supabase
+        .from('brands')
+        .select('*')
+        .eq('org_id', user.org_id)
+        .order('name');
 
-      const response = await fetch(`${apiUrl}/api/brands`, { headers });
-      
-      if (response.ok) {
-        const data = await response.json();
-        const activeBrands = data.filter((brand: Brand) => brand.is_active);
-        setBrands(activeBrands);
-        
-        // Auto-select first brand if none selected
-        if (activeBrands.length > 0 && !selectedBrand) {
-          setSelectedBrand(activeBrands[0].id);
-        }
+      if (error) {
+        console.error('Erro ao carregar marcas:', error);
+        showToast.error('Erro ao carregar marcas');
+        return;
+      }
+
+      console.log('🏭 Marcas carregadas:', data?.length || 0);
+      const activeBrands = (data || []).filter((brand: Brand) => brand.is_active);
+      setBrands(activeBrands);
+
+      if (activeBrands.length > 0 && !selectedBrand) {
+        setSelectedBrand(activeBrands[0].code);
       }
     } catch (err) {
       console.error('Erro ao carregar marcas:', err);

@@ -50,58 +50,44 @@ export function IdeasPendentesPage() {
   const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
 
   useEffect(() => {
-    fetchIdeias();
-    checkUserPermissions();
-  }, [activeTab]);
+    if (user) {
+      fetchIdeias();
+      checkUserPermissions();
+    }
+  }, [activeTab, user]);
 
-  const checkUserPermissions = async () => {
-    try {
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
-
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
-
-      const response = await fetch(`${apiUrl}/api`, { headers });
-      
-      if (response.ok) {
-        const userData = await response.json();
-        setUserCanApprove(userData.pode_aprovar || false);
-      }
-    } catch (err) {
-      console.error('Erro ao verificar permissões:', err);
+  const checkUserPermissions = () => {
+    if (user) {
+      setUserCanApprove(user.pode_aprovar || false);
     }
   };
 
   const fetchIdeias = async () => {
+    if (!user?.org_id) return;
+
     try {
       setLoading(true);
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
+      const { supabase } = await import('../lib/supabase');
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
+      const status = activeTab === 'pendentes' ? 'PENDENTE' :
+                     activeTab === 'aprovadas' ? 'APROVADA' : 'REJEITADA';
 
-      const params = new URLSearchParams();
-      if (activeTab !== 'pendentes') {
-        params.append('status', activeTab === 'aprovadas' ? 'APROVADA' : 'REJEITADA');
-      } else {
-        params.append('status', 'PENDENTE');
+      const { data, error } = await supabase
+        .from('ideias_importadas')
+        .select('*')
+        .eq('org_id', user.org_id)
+        .eq('status', status)
+        .order('criado_em', { ascending: false });
+
+      if (error) {
+        console.error('Erro ao carregar ideias:', error);
+        showToast.error('Erro ao carregar ideias');
+        return;
       }
 
-      const response = await fetch(`${apiUrl}/api/ideias?${params}`, { headers });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setIdeias(data);
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        setError(`Erro ao carregar ideias: ${errorData.error || 'Erro desconhecido'}`);
-      }
+      console.log('💡 Ideias carregadas:', data?.length || 0);
+      setIdeias(data || []);
+      setError(null);
     } catch (err) {
       setError('Erro ao carregar ideias');
       console.error('Erro ao carregar ideias:', err);

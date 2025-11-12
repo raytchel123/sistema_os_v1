@@ -41,10 +41,12 @@ export function MinhasAprovacoesPage() {
   const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
 
   useEffect(() => {
-    fetchOrdens();
-    checkUserPermissions();
-    setDefaultSchedule();
-  }, []);
+    if (user) {
+      fetchOrdens();
+      checkUserPermissions();
+      setDefaultSchedule();
+    }
+  }, [user]);
 
   const setDefaultSchedule = () => {
     const tomorrow = new Date();
@@ -53,50 +55,27 @@ export function MinhasAprovacoesPage() {
   };
 
   const fetchOrdens = async () => {
+    if (!user?.org_id) return;
+
     try {
       setLoading(true);
-      
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) {
-        setError('Usuário não autenticado');
+      const { supabase } = await import('../lib/supabase');
+
+      const { data, error } = await supabase
+        .from('ordens_de_servico')
+        .select('*')
+        .eq('org_id', user.org_id)
+        .eq('status', 'APROVACAO')
+        .order('criado_em', { ascending: false });
+
+      if (error) {
+        console.error('Erro ao buscar OS para aprovação:', error);
+        setError('Erro ao buscar OS para aprovação');
         return;
       }
-
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
-
-      // Buscar todas as OS e filtrar no frontend para debug
-      const response = await fetch(`${apiUrl}/api/ordens`, { headers });
       
-      if (!response.ok) {
-        let errorMessage = `HTTP ${response.status}`;
-        try {
-          const errorData = await response.json();
-          if (errorData?.error) {
-            errorMessage += ` - ${errorData.error}`;
-          }
-        } catch {
-          // If JSON parsing fails, use status text
-          errorMessage += ` - ${response.statusText}`;
-        }
-        throw new Error(`Erro ao buscar OS para aprovação: ${errorMessage}`);
-      }
-      
-      const data = await response.json();
-      console.log('📊 Total OS fetched:', data?.length || 0);
-      console.log('📊 All OS statuses:', data?.map((os: any) => ({ id: os.id, titulo: os.titulo, status: os.status })) || []);
-      
-      // Filter by APROVACAO status on frontend as backup
-      const ordensAprovacao = Array.isArray(data) 
-        ? data.filter((os: any) => os.status === 'APROVACAO')
-        : [];
-      
-      console.log('📊 OS in APROVACAO status:', ordensAprovacao.length);
-      console.log('📊 APROVACAO OS details:', ordensAprovacao.map((os: any) => ({ id: os.id, titulo: os.titulo, status: os.status })));
-      
-      setOrdens(ordensAprovacao);
+      console.log('✅ OS para aprovação:', data?.length || 0);
+      setOrdens(data || []);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar dados');
