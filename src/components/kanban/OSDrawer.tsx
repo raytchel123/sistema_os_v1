@@ -141,21 +141,24 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
   };
 
   const fetchBrands = async () => {
+    if (!user) return;
+
     try {
       setBrandsLoading(true);
-      const { data: { session } } = await (await import('../../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
+      const { supabase } = await import('../../lib/supabase');
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
+      const { data, error } = await supabase
+        .from('marcas')
+        .select('id, nome')
+        .eq('org_id', user.org_id)
+        .eq('is_active', true)
+        .order('nome');
 
-      const response = await fetch(`${apiUrl}/api/brands`, { headers });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setBrands(data.filter((brand: any) => brand.is_active));
+      if (error) {
+        console.error('❌ Error loading brands:', error);
+      } else {
+        setBrands(data || []);
+        console.log('🏪 Brands loaded for drawer:', data);
       }
     } catch (err) {
       console.error('Erro ao carregar marcas:', err);
@@ -248,34 +251,27 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
   };
 
   const handlePedirAprovacao = async () => {
-    if (!ordem?.id) return;
+    if (!ordem?.id || !user) return;
 
     setApprovalLoading(true);
     const loadingToast = showToast.loading('Enviando para aprovação...');
 
     try {
-      const { data: { session } } = await (await import('../../lib/supabase')).supabase.auth.getSession();
-      if (!session) {
-        throw new Error('Usuário não autenticado');
-      }
+      const { supabase } = await import('../../lib/supabase');
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
-
-      const response = await fetch(`${apiUrl}/api/ordens/${ordem.id}`, {
-        method: 'PUT',
-        headers,
-        body: JSON.stringify({
-          ...formData,
-          status: 'APROVACAO'
+      const { data, error } = await supabase
+        .from('ordens_de_servico')
+        .update({
+          status: 'APROVACAO',
+          atualizado_em: new Date().toISOString()
         })
-      });
+        .eq('id', ordem.id)
+        .eq('org_id', user.org_id)
+        .select()
+        .single();
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(`Erro ao enviar para aprovação (${response.status}): ${errorData.error || 'Erro desconhecido'}`);
+      if (error) {
+        throw new Error(`Erro ao enviar para aprovação: ${error.message}`);
       }
 
       showToast.success('OS enviada para aprovação com sucesso!');
@@ -291,7 +287,7 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
   };
 
   const handleMarkAsPosted = async () => {
-    if (!ordem?.id) return;
+    if (!ordem?.id || !user) return;
 
     if (!window.confirm('Tem certeza que deseja marcar esta OS como postada?')) {
       return;
@@ -301,28 +297,21 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
     const loadingToast = showToast.loading('Marcando como postado...');
 
     try {
-      const { data: { session } } = await (await import('../../lib/supabase')).supabase.auth.getSession();
-      if (!session) {
-        throw new Error('Usuário não autenticado');
-      }
+      const { supabase } = await import('../../lib/supabase');
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
-
-      const response = await fetch(`${apiUrl}/api/ordens/${ordem.id}`, {
-        method: 'PUT',
-        headers,
-        body: JSON.stringify({
-          ...formData,
-          status: 'POSTADO'
+      const { data, error } = await supabase
+        .from('ordens_de_servico')
+        .update({
+          status: 'POSTADO',
+          atualizado_em: new Date().toISOString()
         })
-      });
+        .eq('id', ordem.id)
+        .eq('org_id', user.org_id)
+        .select()
+        .single();
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(`Erro ao marcar como postado (${response.status}): ${errorData.error || 'Erro desconhecido'}`);
+      if (error) {
+        throw new Error(`Erro ao marcar como postado: ${error.message}`);
       }
 
       showToast.success('OS marcada como postada com sucesso!');
