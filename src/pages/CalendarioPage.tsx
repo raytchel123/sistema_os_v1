@@ -42,9 +42,11 @@ export function CalendarioPage() {
   const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
 
   useEffect(() => {
-    fetchEvents();
-    checkUserPermissions();
-  }, [currentDate, filters]);
+    if (user) {
+      fetchEvents();
+      checkUserPermissions();
+    }
+  }, [currentDate, filters, user]);
 
   useEffect(() => {
     if (currentUserId !== null && events.length > 0) {
@@ -76,54 +78,38 @@ export function CalendarioPage() {
     }
   }, [events, userCanViewAll, currentUserId]);
 
-  const checkUserPermissions = async () => {
-    try {
-      console.log('🔍 Checking user permissions in CalendarioPage...');
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
-
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
-
-      const response = await fetch(`${apiUrl}/api`, { headers });
-      
-      if (response.ok) {
-        const userData = await response.json();
-        console.log('👤 CalendarioPage user data:', userData);
-        setUserCanViewAll(userData.pode_ver_todas_os || false);
-        setCurrentUserId(userData.id);
-        console.log('✅ CalendarioPage userCanViewAll set to:', userData.pode_ver_todas_os);
-      } else {
-        const errorText = await response.text();
-        console.error('❌ CalendarioPage API Error:', response.status, errorText);
-      }
-    } catch (err) {
-      console.error('Erro ao verificar permissões:', err);
+  const checkUserPermissions = () => {
+    if (user) {
+      console.log('👤 CalendarioPage user permissions:', user);
+      setUserCanViewAll(user.pode_ver_todas_os || false);
+      setCurrentUserId(user.id);
     }
   };
 
   const fetchEvents = async () => {
+    if (!user?.org_id) return;
+
     try {
       setLoading(true);
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
-
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
+      const { supabase } = await import('../lib/supabase');
 
       const params = new URLSearchParams();
       if (filters.marca) params.append('marca', filters.marca);
-      
-      const response = await fetch(`${apiUrl}/api/ordens?${params}`, { headers });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setEvents(data.filter((os: any) => os.prazo && os.prazo.trim()));
+
+      const { data, error } = await supabase
+        .from('ordens_de_servico')
+        .select('*')
+        .eq('org_id', user.org_id)
+        .not('prazo', 'is', null);
+
+      if (error) {
+        console.error('Erro ao carregar eventos:', error);
+        showToast.error('Erro ao carregar eventos');
+        return;
       }
+
+      console.log('📅 Eventos carregados:', data?.length || 0);
+      setEvents(data || []);
     } catch (err) {
       console.error('Erro ao carregar eventos:', err);
     } finally {
