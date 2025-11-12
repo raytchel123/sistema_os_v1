@@ -165,34 +165,16 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
   };
 
   const handleSave = async () => {
-    if (!ordem?.id) return;
+    if (!ordem?.id || !user) return;
 
     console.log('💾 OSDrawer - Starting save for OS:', ordem.id);
-    console.log('📝 OSDrawer - Current form data:', formData);
-    console.log('📝 OSDrawer - Form data validation:', {
-      hasTitulo: !!formData.titulo,
-      hasDescricao: !!formData.descricao,
-      hasMarca: !!formData.marca,
-      hasObjetivo: !!formData.objetivo,
-      hasTipo: !!formData.tipo,
-      formDataKeys: Object.keys(formData)
-    });
 
     setLoading(true);
     const loadingToast = showToast.loading('Salvando alterações...');
 
     try {
-      const { data: { session } } = await (await import('../../lib/supabase')).supabase.auth.getSession();
-      if (!session) {
-        throw new Error('Usuário não autenticado');
-      }
+      const { supabase } = await import('../../lib/supabase');
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
-
-      // Preparar dados para envio
       const payload = {
         titulo: formData.titulo,
         descricao: formData.descricao,
@@ -212,38 +194,25 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
         criativos_prontos_links: formData.final_media_links.filter(link => link.trim()),
         categorias_criativos: formData.categorias_criativos,
         responsaveis: formData.responsaveis,
-        prazo: formData.prazo || null
+        prazo: formData.prazo || null,
+        atualizado_em: new Date().toISOString()
       };
-      
-      console.log('🚀 OSDrawer - Final payload:', payload);
-      console.log('🚀 OSDrawer - Payload validation:', {
-        hasRequiredFields: !!(payload.titulo && payload.marca && payload.objetivo && payload.tipo),
-        payloadSize: JSON.stringify(payload).length,
-        endpoint: `${apiUrl}/api/ordens/${ordem.id}`
-      });
 
-      const response = await fetch(`${apiUrl}/api/ordens/${ordem.id}`, {
-        method: 'PUT',
-        headers,
-        body: JSON.stringify(payload)
-      });
+      const { data, error } = await supabase
+        .from('ordens_de_servico')
+        .update(payload)
+        .eq('id', ordem.id)
+        .eq('org_id', user.org_id)
+        .select()
+        .single();
 
-      console.log('📡 OSDrawer - API response:', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok,
-        headers: Object.fromEntries(response.headers.entries())
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('❌ OSDrawer - API error:', response.status, errorData);
-        throw new Error(`Erro ao salvar (${response.status}): ${errorData.error || 'Erro desconhecido'}`);
+      if (error) {
+        console.error('❌ OSDrawer - Error saving:', error);
+        throw new Error(`Erro ao salvar: ${error.message}`);
       }
 
-      const responseData = await response.json();
-      console.log('✅ OSDrawer - Save successful:', responseData);
-      
+      console.log('✅ OSDrawer - Save successful:', data);
+
       showToast.success('OS atualizada com sucesso!');
       onUpdate();
     } catch (error) {
