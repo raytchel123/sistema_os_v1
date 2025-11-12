@@ -2,6 +2,7 @@ export interface User {
   id: string;
   email: string;
   created_at: string;
+  org_id?: string;
   pode_ver_todas_os?: boolean;
   pode_aprovar?: boolean;
   nome?: string;

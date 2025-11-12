@@ -66,13 +66,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: 'Email não encontrado.' };
       }
 
-      console.log('Login bem-sucedido:', data.nome);
+      console.log('Login bem-sucedido:', data.nome, 'org_id:', data.org_id);
 
       const userData = {
         id: data.id,
         email: data.email,
         nome: data.nome,
-        papel: data.papel
+        papel: data.papel,
+        org_id: data.org_id,
+        pode_ver_todas_os: data.pode_ver_todas_os,
+        pode_aprovar: data.pode_aprovar,
+        menu_permissions: data.menu_permissions,
+        created_at: data.criado_em
       } as User;
 
       setUser(userData);
