@@ -266,7 +266,6 @@ export const organizationsRelations = relations(organizations, ({ many }) => ({
   postSuggestions: many(postSuggestions),
   ideias: many(ideias),
   importSessions: many(importSessions),
-  ideias: many(ideias),
 }));
 // Ideias (imported content awaiting approval)
 export const ideias = pgTable('ideias', {

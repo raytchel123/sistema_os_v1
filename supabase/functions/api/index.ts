@@ -1109,6 +1109,111 @@ Deno.serve(async (req) => {
       );
     }
 
+    // POST /auth/login - Custom login with users table
+    if (effectivePath === '/auth/login' && req.method === 'POST') {
+      const body = await req.json();
+      const { email, password } = body;
+
+      if (!email || !password) {
+        return new Response(
+          JSON.stringify({ error: 'Email e senha são obrigatórios' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const { data: user, error } = await supabaseClient
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (error || !user) {
+        return new Response(
+          JSON.stringify({ error: 'Email ou senha incorretos' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const passwordHash = await crypto.subtle.digest(
+        'SHA-256',
+        new TextEncoder().encode(password)
+      );
+      const hashedPassword = Array.from(new Uint8Array(passwordHash))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+
+      if (user.senha_hash !== hashedPassword) {
+        return new Response(
+          JSON.stringify({ error: 'Email ou senha incorretos' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const { senha_hash, ...userWithoutPassword } = user;
+
+      return new Response(
+        JSON.stringify({ success: true, user: userWithoutPassword }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // POST /auth/signup - Custom signup with users table
+    if (effectivePath === '/auth/signup' && req.method === 'POST') {
+      const body = await req.json();
+      const { email, password, nome } = body;
+
+      if (!email || !password || !nome) {
+        return new Response(
+          JSON.stringify({ error: 'Email, senha e nome são obrigatórios' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const { data: existingUser } = await supabaseClient
+        .from('users')
+        .select('id')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (existingUser) {
+        return new Response(
+          JSON.stringify({ error: 'Email já está cadastrado' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const passwordHash = await crypto.subtle.digest(
+        'SHA-256',
+        new TextEncoder().encode(password)
+      );
+      const hashedPassword = Array.from(new Uint8Array(passwordHash))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+
+      const { data: newUser, error } = await supabaseClient
+        .from('users')
+        .insert({
+          email,
+          senha_hash: hashedPassword,
+          nome,
+          papel: 'EDITOR'
+        })
+        .select('id, email, nome, papel, created_at')
+        .single();
+
+      if (error) {
+        return new Response(
+          JSON.stringify({ error: 'Erro ao criar usuário' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, user: newUser }),
+        { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // GET /users/me - Get current user info (alias for /)
     if (effectivePath === '/users/me' && req.method === 'GET') {
       if (!currentUser) {

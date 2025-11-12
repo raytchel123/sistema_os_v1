@@ -236,7 +236,6 @@ export function UsuariosPage() {
         pode_aprovar: formData.pode_aprovar,
         pode_ver_todas_os: formData.pode_ver_todas_os,
         menu_permissions: formData.menu_permissions,
-        menu_permissions: formData.menu_permissions,
         ...(formData.senha && { senha: formData.senha })
       };
 
