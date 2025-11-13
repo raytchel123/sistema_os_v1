@@ -184,27 +184,25 @@ export function MinhasAprovacoesPage() {
   const openOSDrawer = async (osId: string) => {
     try {
       console.log('🔍 MinhasAprovacoesPage - Opening drawer for OS:', osId);
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
+      if (!user) return;
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
+      const { supabase } = await import('../lib/supabase');
 
-      const response = await fetch(`${apiUrl}/api/ordens/${osId}`, { headers });
-      
-      if (response.ok) {
-        const osData = await response.json();
-        console.log('📦 MinhasAprovacoesPage - Raw API response:', osData);
-        
-        setSelectedOSForEdit(osData);
-        setIsDrawerOpen(true);
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Erro ao carregar OS:', response.status, errorData);
-        showToast.error(`Erro ao carregar OS (${response.status}): ${errorData.error || 'Erro desconhecido'}`);
+      const { data: osData, error } = await supabase
+        .from('ordens_de_servico')
+        .select('*')
+        .eq('id', osId)
+        .single();
+
+      if (error) {
+        console.error('Erro ao carregar OS:', error);
+        showToast.error('Erro ao carregar OS');
+        return;
       }
+
+      console.log('📦 MinhasAprovacoesPage - OS data:', osData);
+      setSelectedOSForEdit(osData);
+      setIsDrawerOpen(true);
     } catch (err) {
       console.error('Erro ao carregar OS:', err);
       showToast.error('Erro ao carregar OS');
