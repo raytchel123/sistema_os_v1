@@ -414,22 +414,18 @@ export function IdeiasPage() {
   };
 
   const handleTransformToPauta = async () => {
-    if (!selectedMarca || !ideaText.trim()) return;
+    if (!selectedMarca || !ideaText.trim() || !user) return;
 
     setIsProcessing(true);
     setCurrentStep(2);
-    
+
     try {
       setProcessingStep('Conectando com a IA...');
-      
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) {
-        throw new Error('Usuário não autenticado');
-      }
 
       const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         'Content-Type': 'application/json',
+        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY
       };
 
       const response = await fetch(`${apiUrl}/ai-idea-processor`, {
@@ -449,13 +445,13 @@ export function IdeiasPage() {
       }
 
       const result = await response.json();
-      
+
       if (isCronograma) {
         setGeneratedCronograma(result as GeneratedCronograma);
       } else {
         setGeneratedPauta(result as GeneratedPauta);
       }
-      
+
       setShowPreview(true);
       setCurrentStep(3);
     } catch (error) {
@@ -468,30 +464,27 @@ export function IdeiasPage() {
   };
 
   const handleCreateOS = async () => {
-    if (!generatedPauta) return;
+    if (!generatedPauta || !user?.org_id) return;
 
     const loadingToast = showToast.loading('Criando OS...');
 
     try {
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) {
-        throw new Error('Usuário não autenticado');
-      }
+      const { supabase } = await import('../lib/supabase');
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
+      const osData = {
+        ...generatedPauta,
+        org_id: user.org_id,
+        criado_por: user.id,
+        criado_em: new Date().toISOString(),
+        atualizado_em: new Date().toISOString()
       };
 
-      const response = await fetch(`${apiUrl}/api/ordens`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(generatedPauta),
-      });
+      const { error } = await supabase
+        .from('ordens_de_servico')
+        .insert(osData);
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(`Erro ao criar OS (${response.status}): ${errorData.error || 'Erro desconhecido'}`);
+      if (error) {
+        throw new Error(error.message);
       }
 
       showToast.success('OS criada com sucesso!');
@@ -505,37 +498,35 @@ export function IdeiasPage() {
   };
 
   const handleCreateCronograma = async () => {
-    if (!generatedCronograma) return;
+    if (!generatedCronograma || !user?.org_id) return;
 
     const loadingToast = showToast.loading(`Criando ${generatedCronograma.items.length} OS...`);
 
     try {
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) {
-        throw new Error('Usuário não autenticado');
-      }
-
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
+      const { supabase } = await import('../lib/supabase');
 
       let created = 0;
       let errors = 0;
 
       for (const pauta of generatedCronograma.items) {
         try {
-          const response = await fetch(`${apiUrl}/api/ordens`, {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(pauta),
-          });
+          const osData = {
+            ...pauta,
+            org_id: user.org_id,
+            criado_por: user.id,
+            criado_em: new Date().toISOString(),
+            atualizado_em: new Date().toISOString()
+          };
 
-          if (response.ok) {
-            created++;
-          } else {
+          const { error } = await supabase
+            .from('ordens_de_servico')
+            .insert(osData);
+
+          if (error) {
             errors++;
-            console.error(`Erro ao criar OS "${pauta.titulo}":`, response.status);
+            console.error(`Erro ao criar OS "${pauta.titulo}":`, error);
+          } else {
+            created++;
           }
         } catch (error) {
           errors++;
@@ -548,7 +539,7 @@ export function IdeiasPage() {
       } else {
         showToast.warning(`${created} OS criadas com sucesso, ${errors} falharam`);
       }
-      
+
       navigate('/kanban');
     } catch (error) {
       console.error('Erro ao criar cronograma:', error);

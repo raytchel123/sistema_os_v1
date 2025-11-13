@@ -97,32 +97,76 @@ export function IdeasPendentesPage() {
   };
 
   const handleApprove = async (ideiaId: string) => {
+    if (!user?.org_id) return;
+
     setActionLoading(ideiaId);
     const loadingToast = showToast.loading('Aprovando ideia...');
-    
-    try {
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
+    try {
+      const { supabase } = await import('../lib/supabase');
+
+      // Buscar a ideia
+      const { data: ideia, error: fetchError } = await supabase
+        .from('ideias_importadas')
+        .select('*')
+        .eq('id', ideiaId)
+        .single();
+
+      if (fetchError || !ideia) {
+        throw new Error('Ideia não encontrada');
+      }
+
+      // Criar OS a partir da ideia
+      const osData = {
+        titulo: ideia.titulo,
+        descricao: ideia.descricao,
+        marca: ideia.marca,
+        objetivo: ideia.objetivo || 'ATRACAO',
+        tipo: ideia.tipo || 'EDUCATIVO',
+        status: 'ROTEIRO',
+        prioridade: ideia.prioridade || 'MEDIUM',
+        gancho: ideia.gancho,
+        cta: ideia.cta,
+        script_text: ideia.script_text,
+        legenda: ideia.legenda,
+        canais: ideia.canais || ['Instagram'],
+        categorias_criativos: ideia.categorias_criativos || [],
+        data_publicacao_prevista: ideia.data_publicacao_prevista || ideia.prazo,
+        org_id: user.org_id,
+        criado_por: user.id,
+        criado_em: new Date().toISOString(),
+        atualizado_em: new Date().toISOString()
       };
 
-      const response = await fetch(`${apiUrl}/api/ideias/${ideiaId}/approve`, {
-        method: 'POST',
-        headers
-      });
+      const { data: newOS, error: osError } = await supabase
+        .from('ordens_de_servico')
+        .insert(osData)
+        .select()
+        .single();
 
-      if (response.ok) {
-        const result = await response.json();
-        showToast.success(`Ideia aprovada! OS "${result.os_criada.titulo}" criada com sucesso.`);
-        fetchIdeias(); // Refresh list
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        showToast.error(`Erro ao aprovar ideia: ${errorData.error || 'Erro desconhecido'}`);
+      if (osError) {
+        throw new Error(osError.message);
       }
+
+      // Atualizar status da ideia
+      const { error: updateError } = await supabase
+        .from('ideias_importadas')
+        .update({
+          status: 'APROVADA',
+          aprovada_por_user: { id: user.id, nome: user.nome, papel: user.papel },
+          os_criada: { id: newOS.id, titulo: newOS.titulo, status: newOS.status },
+          atualizado_em: new Date().toISOString()
+        })
+        .eq('id', ideiaId);
+
+      if (updateError) {
+        throw new Error(updateError.message);
+      }
+
+      showToast.success(`Ideia aprovada! OS "${newOS.titulo}" criada com sucesso.`);
+      await fetchIdeias();
     } catch (err) {
+      console.error('Erro ao aprovar ideia:', err);
       showToast.error('Erro ao aprovar ideia');
     } finally {
       showToast.dismiss(loadingToast);
@@ -131,37 +175,35 @@ export function IdeasPendentesPage() {
   };
 
   const handleReject = async () => {
-    if (!selectedIdeia || !rejectReason.trim()) return;
+    if (!selectedIdeia || !rejectReason.trim() || !user) return;
 
     setActionLoading(selectedIdeia.id);
     const loadingToast = showToast.loading('Rejeitando ideia...');
-    
+
     try {
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
+      const { supabase } = await import('../lib/supabase');
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
+      const { error } = await supabase
+        .from('ideias_importadas')
+        .update({
+          status: 'REJEITADA',
+          motivo_rejeicao: rejectReason,
+          rejeitada_por_user: { id: user.id, nome: user.nome, papel: user.papel },
+          atualizado_em: new Date().toISOString()
+        })
+        .eq('id', selectedIdeia.id);
 
-      const response = await fetch(`${apiUrl}/api/ideias/${selectedIdeia.id}/reject`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ motivo: rejectReason })
-      });
-
-      if (response.ok) {
-        showToast.success('Ideia rejeitada com sucesso!');
-        setShowRejectModal(false);
-        setSelectedIdeia(null);
-        setRejectReason('');
-        fetchIdeias(); // Refresh list
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        showToast.error(`Erro ao rejeitar ideia: ${errorData.error || 'Erro desconhecido'}`);
+      if (error) {
+        throw new Error(error.message);
       }
+
+      showToast.success('Ideia rejeitada com sucesso!');
+      setShowRejectModal(false);
+      setSelectedIdeia(null);
+      setRejectReason('');
+      await fetchIdeias();
     } catch (err) {
+      console.error('Erro ao rejeitar ideia:', err);
       showToast.error('Erro ao rejeitar ideia');
     } finally {
       showToast.dismiss(loadingToast);
