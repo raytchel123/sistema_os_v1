@@ -108,40 +108,59 @@ export function RelatoriosPage() {
 
       const { data: osCompletadas, error: completadasError } = await supabase
         .from('ordens_de_servico')
-        .select('*, users!ordens_de_servico_criado_por_fkey(nome, papel)')
+        .select('criado_por, marca, atualizado_em')
         .eq('org_id', user.org_id)
         .eq('status', 'PUBLICADO')
         .gte('atualizado_em', semanaPassada.toISOString());
 
-      if (completadasError) throw completadasError;
+      if (completadasError) {
+        console.error('Erro ao buscar OSs completadas:', completadasError);
+        // Não falhar se houver erro, apenas definir produtividade vazia
+        setProductivity({
+          periodo: 'Últimos 7 dias',
+          usuarios: [],
+          total_os_completadas: 0
+        });
+      } else {
+        // Buscar informações dos usuários
+        const userIds = [...new Set(osCompletadas?.map(os => os.criado_por) || [])];
+        const { data: usersData } = await supabase
+          .from('users')
+          .select('id, nome, papel')
+          .in('id', userIds);
 
-      // Agrupar por usuário
-      const usuariosMap = new Map<string, any>();
-      osCompletadas?.forEach(os => {
-        const userId = os.criado_por;
-        if (!usuariosMap.has(userId)) {
-          usuariosMap.set(userId, {
-            nome: os.users?.nome || 'Desconhecido',
-            papel: os.users?.papel || 'N/A',
-            os_completadas: 0,
-            marcas: new Set()
-          });
-        }
-        const userData = usuariosMap.get(userId);
-        userData.os_completadas++;
-        userData.marcas.add(os.marca);
-      });
+        const usersMap = new Map(usersData?.map(u => [u.id, u]) || []);
 
-      const usuarios = Array.from(usuariosMap.values()).map(u => ({
-        ...u,
-        marcas: Array.from(u.marcas)
-      }));
+        // Agrupar por usuário
+        const usuariosMap = new Map<string, any>();
+        osCompletadas?.forEach(os => {
+          const userId = os.criado_por;
+          const userInfo = usersMap.get(userId);
 
-      setProductivity({
-        periodo: 'Últimos 7 dias',
-        usuarios: usuarios,
-        total_os_completadas: osCompletadas?.length || 0
-      });
+          if (!usuariosMap.has(userId)) {
+            usuariosMap.set(userId, {
+              nome: userInfo?.nome || 'Desconhecido',
+              papel: userInfo?.papel || 'N/A',
+              os_completadas: 0,
+              marcas: new Set()
+            });
+          }
+          const userData = usuariosMap.get(userId);
+          userData.os_completadas++;
+          userData.marcas.add(os.marca);
+        });
+
+        const usuarios = Array.from(usuariosMap.values()).map(u => ({
+          ...u,
+          marcas: Array.from(u.marcas)
+        }));
+
+        setProductivity({
+          periodo: 'Últimos 7 dias',
+          usuarios: usuarios,
+          total_os_completadas: osCompletadas?.length || 0
+        });
+      }
 
     } catch (err) {
       console.error('Erro ao carregar dados:', err);
