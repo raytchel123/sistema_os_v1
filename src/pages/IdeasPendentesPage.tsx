@@ -73,7 +73,7 @@ export function IdeasPendentesPage() {
                      activeTab === 'aprovadas' ? 'APROVADA' : 'REJEITADA';
 
       const { data, error } = await supabase
-        .from('ideias_importadas')
+        .from('ideias')
         .select('*')
         .eq('org_id', user.org_id)
         .eq('status', status)
@@ -107,7 +107,7 @@ export function IdeasPendentesPage() {
 
       // Buscar a ideia
       const { data: ideia, error: fetchError } = await supabase
-        .from('ideias_importadas')
+        .from('ideias')
         .select('*')
         .eq('id', ideiaId)
         .single();
@@ -150,11 +150,11 @@ export function IdeasPendentesPage() {
 
       // Atualizar status da ideia
       const { error: updateError } = await supabase
-        .from('ideias_importadas')
+        .from('ideias')
         .update({
           status: 'APROVADA',
-          aprovada_por_user: { id: user.id, nome: user.nome, papel: user.papel },
-          os_criada: { id: newOS.id, titulo: newOS.titulo, status: newOS.status },
+          aprovada_por: user.id,
+          os_criada_id: newOS.id,
           atualizado_em: new Date().toISOString()
         })
         .eq('id', ideiaId);
@@ -184,11 +184,11 @@ export function IdeasPendentesPage() {
       const { supabase } = await import('../lib/supabase');
 
       const { error } = await supabase
-        .from('ideias_importadas')
+        .from('ideias')
         .update({
           status: 'REJEITADA',
           motivo_rejeicao: rejectReason,
-          rejeitada_por_user: { id: user.id, nome: user.nome, papel: user.papel },
+          rejeitada_por: user.id,
           atualizado_em: new Date().toISOString()
         })
         .eq('id', selectedIdeia.id);
