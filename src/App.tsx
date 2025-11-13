@@ -20,6 +20,7 @@ import { AuditoriaConteudoPage } from './pages/AuditoriaConteudoPage';
 import { UsuariosPage } from './pages/UsuariosPage';
 import { ImportarOSPage } from './pages/ImportarOSPage';
 import { IdeasPendentesPage } from './pages/IdeasPendentesPage';
+import TarefasPage from './pages/TarefasPage';
 import { ToastContainer } from './components/ui/Toast';
 
 function App() {
@@ -48,6 +49,7 @@ function App() {
               <Route path="usuarios" element={<UsuariosPage />} />
               <Route path="importar" element={<ImportarOSPage />} />
               <Route path="ideias-pendentes" element={<IdeasPendentesPage />} />
+              <Route path="tarefas" element={<TarefasPage />} />
             </Route>
           </Routes>
         </ProtectedRoute>

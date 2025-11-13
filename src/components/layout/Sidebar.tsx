@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { 
-  Kanban, 
-  List, 
+import {
+  Kanban,
+  List,
   BarChart3,
   Settings,
   Save,
   Eye,
   EyeOff,
-  Menu, 
+  Menu,
   X,
   LogOut,
   Video,
@@ -19,7 +19,8 @@ import {
   Lightbulb,
   CalendarDays,
   TrendingUp,
-  Upload
+  Upload,
+  CheckSquare
 } from 'lucide-react';
 import { Users } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -29,6 +30,7 @@ import { MenuPermissions } from '../../types/auth';
 const menuItems = [
   { to: '/kanban', icon: Kanban, label: 'Kanban', description: 'Visualização em quadro', permission: 'kanban' },
   { to: '/lista', icon: List, label: 'Lista', description: 'Visualização em lista', permission: 'lista' },
+  { to: '/tarefas', icon: CheckSquare, label: 'Tarefas', description: 'Gerenciar tarefas', permission: 'tarefas' },
   { to: '/calendario', icon: Calendar, label: 'Planejamento', description: 'Calendário de publicações', permission: 'calendario' },
   { to: '/biblioteca', icon: Archive, label: 'Biblioteca', description: 'Conteúdos publicados', permission: 'biblioteca' },
   { to: '/ideias', icon: Lightbulb, label: 'Ideias', description: 'Transformar ideias em pautas', permission: 'ideias' },
