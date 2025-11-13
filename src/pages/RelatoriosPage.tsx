@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { BarChart3, AlertTriangle, Clock, TrendingUp, Users, Target, Calendar, Award, Zap } from 'lucide-react';
+import { BarChart3, AlertTriangle, Clock, TrendingUp, Users, Target, Award } from 'lucide-react';
 import { showToast } from '../components/ui/Toast';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 interface SLAStats {
   total_ativas: number;
@@ -26,80 +28,130 @@ interface ProductivityReport {
 }
 
 export function RelatoriosPage() {
+  const { user } = useAuth();
   const [stats, setStats] = useState<SLAStats | null>(null);
   const [productivity, setProductivity] = useState<ProductivityReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('sla');
 
-  const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
-
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (user?.org_id) {
+      fetchData();
+    }
+  }, [user]);
 
   const fetchData = async () => {
+    if (!user?.org_id) return;
+
     try {
       setLoading(true);
-      
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
+      setError(null);
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
+      // Buscar todas as OSs ativas
+      const { data: ordens, error: ordensError } = await supabase
+        .from('ordens_de_servico')
+        .select('*')
+        .eq('org_id', user.org_id)
+        .neq('status', 'PUBLICADO')
+        .neq('status', 'ARQUIVADO');
 
-      const [slaRes, productivityRes] = await Promise.all([
-        fetch(`${apiUrl}/sla-monitor/sla-stats`, { headers }),
-        fetch(`${apiUrl}/sla-monitor/productivity-report`, { headers })
-      ]);
-      
-      if (slaRes.ok) {
-        const slaData = await slaRes.json();
-        setStats(slaData);
-      }
-      
-      if (productivityRes.ok) {
-        const productivityData = await productivityRes.json();
-        setProductivity(productivityData);
-      }
+      if (ordensError) throw ordensError;
+
+      const now = new Date();
+      const emRisco: any[] = [];
+      const atrasadas: any[] = [];
+      let altaPrioridadeAtrasadas = 0;
+      const porMarca: Record<string, { total: number; atrasadas: number; em_risco: number }> = {};
+
+      ordens?.forEach(os => {
+        // Inicializar contadores por marca
+        if (!porMarca[os.marca]) {
+          porMarca[os.marca] = { total: 0, atrasadas: 0, em_risco: 0 };
+        }
+        porMarca[os.marca].total++;
+
+        // Verificar SLA
+        if (os.data_publicacao_prevista) {
+          const dataPublicacao = new Date(os.data_publicacao_prevista);
+          const diffHours = (dataPublicacao.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+          if (diffHours < 0) {
+            // Atrasada
+            atrasadas.push({ ...os, sla_atual: os.data_publicacao_prevista });
+            porMarca[os.marca].atrasadas++;
+            if (os.prioridade === 'HIGH') {
+              altaPrioridadeAtrasadas++;
+            }
+          } else if (diffHours < 24) {
+            // Em risco (menos de 24h)
+            emRisco.push({ ...os, sla_atual: os.data_publicacao_prevista });
+            porMarca[os.marca].em_risco++;
+          }
+        }
+      });
+
+      setStats({
+        total_ativas: ordens?.length || 0,
+        em_risco: emRisco.length,
+        atrasadas: atrasadas.length,
+        alta_prioridade_atrasadas: altaPrioridadeAtrasadas,
+        por_marca: porMarca,
+        detalhes: {
+          em_risco: emRisco,
+          atrasadas: atrasadas
+        }
+      });
+
+      // Buscar dados de produtividade (OSs completadas na última semana)
+      const semanaPassada = new Date();
+      semanaPassada.setDate(semanaPassada.getDate() - 7);
+
+      const { data: osCompletadas, error: completadasError } = await supabase
+        .from('ordens_de_servico')
+        .select('*, users!ordens_de_servico_criado_por_fkey(nome, papel)')
+        .eq('org_id', user.org_id)
+        .eq('status', 'PUBLICADO')
+        .gte('atualizado_em', semanaPassada.toISOString());
+
+      if (completadasError) throw completadasError;
+
+      // Agrupar por usuário
+      const usuariosMap = new Map<string, any>();
+      osCompletadas?.forEach(os => {
+        const userId = os.criado_por;
+        if (!usuariosMap.has(userId)) {
+          usuariosMap.set(userId, {
+            nome: os.users?.nome || 'Desconhecido',
+            papel: os.users?.papel || 'N/A',
+            os_completadas: 0,
+            marcas: new Set()
+          });
+        }
+        const userData = usuariosMap.get(userId);
+        userData.os_completadas++;
+        userData.marcas.add(os.marca);
+      });
+
+      const usuarios = Array.from(usuariosMap.values()).map(u => ({
+        ...u,
+        marcas: Array.from(u.marcas)
+      }));
+
+      setProductivity({
+        periodo: 'Últimos 7 dias',
+        usuarios: usuarios,
+        total_os_completadas: osCompletadas?.length || 0
+      });
+
     } catch (err) {
+      console.error('Erro ao carregar dados:', err);
       setError(err instanceof Error ? err.message : 'Erro ao carregar dados');
     } finally {
       setLoading(false);
     }
   };
 
-  const runSLAMonitor = async () => {
-    const loadingToast = showToast.loading('Executando monitor de SLA...');
-    
-    try {
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
-
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
-
-      const response = await fetch(`${apiUrl}/sla-monitor/sla-monitor`, {
-        method: 'POST',
-        headers
-      });
-      
-      if (response.ok) {
-        showToast.success('Monitor de SLA executado com sucesso!');
-        fetchData(); // Refresh data
-      } else {
-        showToast.error('Erro ao executar monitor de SLA');
-      }
-    } catch (error) {
-      showToast.error('Erro ao executar monitor de SLA');
-    } finally {
-      showToast.dismiss(loadingToast);
-    }
-  };
 
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -156,11 +208,11 @@ export function RelatoriosPage() {
             <h1 className="text-3xl font-bold text-gray-900">Relatórios</h1>
           </div>
           <button
-            onClick={runSLAMonitor}
+            onClick={fetchData}
             className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors flex items-center"
           >
-            <Zap className="w-4 h-4 mr-2" />
-            Executar Monitor SLA
+            <TrendingUp className="w-4 h-4 mr-2" />
+            Atualizar Dados
           </button>
         </div>
         <p className="text-gray-600">
