@@ -250,7 +250,7 @@ export function UsuariosPage() {
         // Update user
         const updateData: any = { ...payload };
         if (formData.senha) {
-          updateData.senha = formData.senha;
+          updateData.senha_hash = formData.senha;
         }
 
         const { error } = await supabase
@@ -268,7 +268,7 @@ export function UsuariosPage() {
           .from('users')
           .insert([{
             ...payload,
-            senha: formData.senha,
+            senha_hash: formData.senha,
             criado_em: new Date().toISOString()
           }]);
 
