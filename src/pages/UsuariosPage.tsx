@@ -32,6 +32,7 @@ interface UserFormData {
   menu_permissions: {
     kanban: boolean;
     lista: boolean;
+    tarefas: boolean;
     calendario: boolean;
     biblioteca: boolean;
     ideias: boolean;
@@ -60,6 +61,7 @@ export function UsuariosPage() {
     menu_permissions: {
       kanban: true,
       lista: true,
+      tarefas: true,
       calendario: true,
       biblioteca: true,
       ideias: true,
@@ -161,6 +163,7 @@ export function UsuariosPage() {
       menu_permissions: {
         kanban: Boolean(userPermissions?.kanban),
         lista: Boolean(userPermissions?.lista),
+        tarefas: Boolean(userPermissions?.tarefas),
         calendario: Boolean(userPermissions?.calendario),
         biblioteca: Boolean(userPermissions?.biblioteca),
         ideias: Boolean(userPermissions?.ideias),
@@ -550,6 +553,7 @@ export function UsuariosPage() {
                   {Object.entries({
                     kanban: 'Kanban',
                     lista: 'Lista',
+                    tarefas: 'Tarefas',
                     calendario: 'Planejamento',
                     biblioteca: 'Biblioteca',
                     ideias: 'Ideias',

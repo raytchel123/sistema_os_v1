@@ -13,6 +13,7 @@ export interface User {
 export interface MenuPermissions {
   kanban?: boolean;
   lista?: boolean;
+  tarefas?: boolean;
   calendario?: boolean;
   biblioteca?: boolean;
   ideias?: boolean;
