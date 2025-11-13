@@ -680,7 +680,7 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
                     <span className="ml-2 text-gray-600">Carregando usuários...</span>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                       <label className="block text-xs text-gray-500 mb-1">Edição</label>
                       <select
@@ -706,6 +706,24 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
                         onChange={(e) => setFormData(prev => ({
                           ...prev,
                           responsaveis: { ...prev.responsaveis, arte: e.target.value }
+                        }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                      >
+                        <option value="">Selecione...</option>
+                        {users.map(user => (
+                          <option key={user.id} value={user.id}>
+                            {user.nome} ({user.papel})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Design</label>
+                      <select
+                        value={formData.responsaveis?.design || ''}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          responsaveis: { ...prev.responsaveis, design: e.target.value }
                         }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                       >
