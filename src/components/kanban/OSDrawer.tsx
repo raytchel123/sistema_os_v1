@@ -26,6 +26,7 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
     marca: '',
     objetivo: '',
     tipo: '',
+    status: '',
     prioridade: '',
     data_publicacao_prevista: '',
     canais: [] as string[],
@@ -95,8 +96,9 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
         marca: ordem?.marca || '',
         objetivo: ordem?.objetivo || '',
         tipo: ordem?.tipo || '',
+        status: ordem?.status || '',
         prioridade: ordem?.prioridade || '',
-        data_publicacao_prevista: ordem?.data_publicacao_prevista ? 
+        data_publicacao_prevista: ordem?.data_publicacao_prevista ?
           new Date(ordem.data_publicacao_prevista).toISOString().slice(0, 16) : '',
         canais: ordem?.canais || [],
         gancho: ordem?.gancho || '',
@@ -213,29 +215,6 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
       }
 
       console.log('✅ OSDrawer - Save successful:', data);
-
-      // Atualizar o formData com os dados salvos
-      setFormData({
-        titulo: data.titulo || '',
-        descricao: data.descricao || '',
-        marca: data.marca || '',
-        objetivo: data.objetivo || '',
-        tipo: data.tipo || '',
-        prioridade: data.prioridade || '',
-        data_publicacao_prevista: data.data_publicacao_prevista ?
-          new Date(data.data_publicacao_prevista).toISOString().slice(0, 16) : '',
-        canais: data.canais || [],
-        gancho: data.gancho || '',
-        cta: data.cta || '',
-        script_text: data.script_text || '',
-        legenda: data.legenda || '',
-        informacoes_adicionais: data.informacoes_adicionais || '',
-        raw_media_links: data.midia_bruta_links || [],
-        final_media_links: data.criativos_prontos_links || [],
-        categorias_criativos: data.categorias_criativos || [],
-        responsaveis: data.responsaveis || {},
-        prazo: data.prazo ? new Date(data.prazo).toISOString().split('T')[0] : ''
-      });
 
       showToast.success('OS atualizada com sucesso!');
       onUpdate();
