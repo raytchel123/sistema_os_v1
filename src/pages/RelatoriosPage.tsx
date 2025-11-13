@@ -48,13 +48,12 @@ export function RelatoriosPage() {
       setLoading(true);
       setError(null);
 
-      // Buscar todas as OSs ativas
+      // Buscar todas as OSs ativas (não publicadas)
       const { data: ordens, error: ordensError } = await supabase
         .from('ordens_de_servico')
         .select('*')
         .eq('org_id', user.org_id)
-        .neq('status', 'PUBLICADO')
-        .neq('status', 'ARQUIVADO');
+        .neq('status', 'PUBLICADO');
 
       if (ordensError) throw ordensError;
 
