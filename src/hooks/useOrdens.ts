@@ -63,17 +63,17 @@ export function useOrdens() {
 
         setOrdens(ordensWithNames || []);
 
+        const now = new Date();
         const stats = {
-          total: filteredOrdens.length,
-          rascunho: filteredOrdens.filter((o: any) => o.status === 'RASCUNHO').length,
-          intake: filteredOrdens.filter((o: any) => o.status === 'INTAKE').length,
-          briefing: filteredOrdens.filter((o: any) => o.status === 'BRIEFING').length,
-          aprovacao: filteredOrdens.filter((o: any) => o.status === 'APROVACAO_BRIEFING').length,
-          roteiro: filteredOrdens.filter((o: any) => o.status === 'ROTEIRO').length,
-          producao: filteredOrdens.filter((o: any) => o.status === 'PRODUCAO').length,
-          pos: filteredOrdens.filter((o: any) => o.status === 'POS').length,
+          total_os: filteredOrdens.length,
+          aprovacao: filteredOrdens.filter((o: any) => o.status === 'APROVACAO').length,
           revisao: filteredOrdens.filter((o: any) => o.status === 'REVISAO').length,
-          entregue: filteredOrdens.filter((o: any) => o.status === 'ENTREGUE').length,
+          atrasadas: filteredOrdens.filter((o: any) => {
+            if (!o.prazo) return false;
+            const prazoDate = new Date(o.prazo);
+            return prazoDate < now && !['PUBLICADO', 'POSTADO', 'APROVADO'].includes(o.status);
+          }).length,
+          publicado: filteredOrdens.filter((o: any) => o.status === 'PUBLICADO').length,
         };
 
         setStats(stats);
@@ -127,17 +127,17 @@ export function useOrdens() {
 
       setOrdens(ordensWithNames || []);
 
+      const now = new Date();
       const stats = {
-        total: filteredOrdens.length,
-        rascunho: filteredOrdens.filter((o: any) => o.status === 'RASCUNHO').length,
-        intake: filteredOrdens.filter((o: any) => o.status === 'INTAKE').length,
-        briefing: filteredOrdens.filter((o: any) => o.status === 'BRIEFING').length,
-        aprovacao: filteredOrdens.filter((o: any) => o.status === 'APROVACAO_BRIEFING').length,
-        roteiro: filteredOrdens.filter((o: any) => o.status === 'ROTEIRO').length,
-        producao: filteredOrdens.filter((o: any) => o.status === 'PRODUCAO').length,
-        pos: filteredOrdens.filter((o: any) => o.status === 'POS').length,
+        total_os: filteredOrdens.length,
+        aprovacao: filteredOrdens.filter((o: any) => o.status === 'APROVACAO').length,
         revisao: filteredOrdens.filter((o: any) => o.status === 'REVISAO').length,
-        entregue: filteredOrdens.filter((o: any) => o.status === 'ENTREGUE').length,
+        atrasadas: filteredOrdens.filter((o: any) => {
+          if (!o.prazo) return false;
+          const prazoDate = new Date(o.prazo);
+          return prazoDate < now && !['PUBLICADO', 'POSTADO', 'APROVADO'].includes(o.status);
+        }).length,
+        publicado: filteredOrdens.filter((o: any) => o.status === 'PUBLICADO').length,
       };
 
       setStats(stats);
