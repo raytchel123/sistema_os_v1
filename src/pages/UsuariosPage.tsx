@@ -3,6 +3,15 @@ import { Users, Plus, Edit, Trash2, Shield, X, Save } from 'lucide-react';
 import { showToast } from '../components/ui/Toast';
 import { useAuth } from '../contexts/AuthContext';
 
+async function hashPassword(password: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
+}
+
 interface User {
   id: string;
   nome: string;
@@ -250,7 +259,7 @@ export function UsuariosPage() {
         // Update user
         const updateData: any = { ...payload };
         if (formData.senha) {
-          updateData.senha_hash = formData.senha;
+          updateData.senha_hash = await hashPassword(formData.senha);
         }
 
         const { error } = await supabase
@@ -264,11 +273,12 @@ export function UsuariosPage() {
         }
       } else {
         // Create user
+        const hashedPassword = await hashPassword(formData.senha!);
         const { error } = await supabase
           .from('users')
           .insert([{
             ...payload,
-            senha_hash: formData.senha,
+            senha_hash: hashedPassword,
             criado_em: new Date().toISOString()
           }]);
 
