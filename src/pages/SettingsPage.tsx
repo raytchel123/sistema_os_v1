@@ -316,9 +316,14 @@ export function SettingsPage() {
 
   const handleBrandSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!brandFormData.name.trim() || !brandFormData.code.trim()) {
       setBrandError('Nome e código são obrigatórios');
+      return;
+    }
+
+    if (!user?.org_id) {
+      setBrandError('Usuário não autenticado');
       return;
     }
 
@@ -326,49 +331,40 @@ export function SettingsPage() {
     setBrandError(null);
 
     try {
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
-
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
+      const { supabase } = await import('../lib/supabase');
 
       const payload = {
         name: brandFormData.name.trim(),
         code: brandFormData.code.trim().toUpperCase(),
         description: brandFormData.description.trim() || null,
         about: brandFormData.about.trim() || null,
-        is_active: brandFormData.is_active
+        is_active: brandFormData.is_active,
+        org_id: user.org_id
       };
 
-      let response;
       if (editingBrand) {
         // Update brand
-        response = await fetch(`${apiUrl}/api/brands/${editingBrand.id}`, {
-          method: 'PUT',
-          headers,
-          body: JSON.stringify(payload)
-        });
+        const { error } = await supabase
+          .from('brands')
+          .update(payload)
+          .eq('id', editingBrand.id);
+
+        if (error) throw error;
       } else {
         // Create brand
-        response = await fetch(`${apiUrl}/api/brands`, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(payload)
-        });
+        const { error } = await supabase
+          .from('brands')
+          .insert(payload);
+
+        if (error) throw error;
       }
 
-      if (response.ok) {
-        await fetchBrands();
-        closeBrandModal();
-        showToast.success(editingBrand ? 'Marca atualizada com sucesso!' : 'Marca criada com sucesso!');
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        setBrandError(`Erro ao salvar marca: ${errorData.error || 'Erro desconhecido'}`);
-      }
-    } catch (err) {
-      setBrandError(`Erro ao salvar marca: ${err instanceof Error ? err.message : 'Erro de conexão'}`);
+      await fetchBrands();
+      closeBrandModal();
+      showToast.success(editingBrand ? 'Marca atualizada com sucesso!' : 'Marca criada com sucesso!');
+    } catch (err: any) {
+      console.error('Erro ao salvar marca:', err);
+      setBrandError(`Erro ao salvar marca: ${err.message || 'Erro de conexão'}`);
     } finally {
       setBrandFormLoading(false);
     }
@@ -382,28 +378,20 @@ export function SettingsPage() {
     const loadingToast = showToast.loading('Excluindo marca...');
 
     try {
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
+      const { supabase } = await import('../lib/supabase');
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
+      const { error } = await supabase
+        .from('brands')
+        .delete()
+        .eq('id', brand.id);
 
-      const response = await fetch(`${apiUrl}/api/brands/${brand.id}`, {
-        method: 'DELETE',
-        headers
-      });
+      if (error) throw error;
 
-      if (response.ok) {
-        await fetchBrands();
-        showToast.success('Marca excluída com sucesso!');
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        showToast.error(`Erro ao excluir marca: ${errorData.error || 'Erro desconhecido'}`);
-      }
-    } catch (err) {
-      showToast.error(`Erro ao excluir marca: ${err instanceof Error ? err.message : 'Erro de conexão'}`);
+      await fetchBrands();
+      showToast.success('Marca excluída com sucesso!');
+    } catch (err: any) {
+      console.error('Erro ao excluir marca:', err);
+      showToast.error(`Erro ao excluir marca: ${err.message || 'Erro de conexão'}`);
     } finally {
       showToast.dismiss(loadingToast);
     }
