@@ -1,31 +1,29 @@
 import { useState, useEffect, DragEvent } from 'react';
-import { Calendar, ChevronLeft, ChevronRight, Plus, Wand2, Clock, Tag, Edit, Trash2, Eye } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Clock, Tag, Edit, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format, addDays } from 'date-fns';
 import { supabase } from '../lib/supabase';
 import { showToast } from '../components/ui/Toast';
-import { PostDetailsModal } from '../components/planning/PostDetailsModal';
 import { useAuth } from '../contexts/AuthContext';
 
-interface PostSuggestion {
+interface OrdemServico {
   id: string;
-  scheduled_date: string;
-  scheduled_time: string;
-  post_type: 'POST' | 'STORY' | 'REELS';
-  title: string;
-  description: string;
-  hook: string;
-  development: string;
-  cta: string;
-  copy_final: string;
-  hashtags: string[];
-  visual_elements: string[];
-  soundtrack?: string;
-  thumbnail_url: string;
-  status: 'SUGGESTION' | 'IN_PRODUCTION' | 'APPROVED' | 'POSTED';
-  brand_code: string;
-  ai_generated: boolean;
-  created_at: string;
+  titulo: string;
+  descricao: string;
+  marca: string;
+  objetivo: string;
+  tipo: string;
+  status: string;
+  prioridade: string;
+  gancho?: string;
+  cta?: string;
+  script_text?: string;
+  legenda?: string;
+  canais: string[];
+  categorias_criativos: string[];
+  data_publicacao_prevista?: string;
+  criado_em: string;
+  atualizado_em: string;
 }
 
 const monthNames = [
@@ -50,30 +48,21 @@ export function PlanejamentoPage() {
   };
 
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [posts, setPosts] = useState<PostSuggestion[]>([]);
-  const [selectedPost, setSelectedPost] = useState<PostSuggestion | null>(null);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [posts, setPosts] = useState<OrdemServico[]>([]);
+  const [selectedPost, setSelectedPost] = useState<OrdemServico | null>(null);
   const [brands, setBrands] = useState<any[]>([]);
   const [selectedBrand, setSelectedBrand] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [draggedPost, setDraggedPost] = useState<PostSuggestion | null>(null);
+  const [draggedPost, setDraggedPost] = useState<OrdemServico | null>(null);
 
   // Computed value for selectedWeek
   const selectedWeek = getStartOfWeek(currentDate);
 
-  const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
 
   useEffect(() => {
     fetchBrands();
   }, []);
 
-  useEffect(() => {
-    if (selectedBrand) {
-      fetchPostSuggestions();
-    }
-  }, [currentDate, selectedBrand]);
 
   // Carregar sugestões salvas
   useEffect(() => {
@@ -81,25 +70,28 @@ export function PlanejamentoPage() {
   }, [currentDate, selectedBrand]);
 
   const loadSuggestions = async () => {
+    if (!user?.org_id || !selectedBrand) return;
+
     setIsLoading(true);
     try {
       const startDate = format(selectedWeek, 'yyyy-MM-dd');
       const endDate = format(addDays(selectedWeek, 6), 'yyyy-MM-dd');
-      
+
       const { data, error } = await supabase
-        .from('post_suggestions')
+        .from('ordens_de_servico')
         .select('*')
-        .eq('brand_code', selectedBrand)
-        .gte('scheduled_date', startDate)
-        .lte('scheduled_date', endDate)
-        .order('scheduled_date', { ascending: true });
+        .eq('org_id', user.org_id)
+        .eq('marca', selectedBrand)
+        .gte('data_publicacao_prevista', startDate)
+        .lte('data_publicacao_prevista', endDate)
+        .order('data_publicacao_prevista', { ascending: true });
 
       if (error) throw error;
-      
+
       setPosts(data || []);
     } catch (error) {
-      console.error('Erro ao carregar sugestões:', error);
-      showToast.error('Erro ao carregar sugestões');
+      console.error('Erro ao carregar OSs:', error);
+      showToast.error('Erro ao carregar OSs');
     } finally {
       setIsLoading(false);
     }
@@ -130,104 +122,8 @@ export function PlanejamentoPage() {
     }
   };
 
-  const fetchPostSuggestions = async () => {
-    try {
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
 
-      const startOfWeek = getStartOfWeek(currentDate);
-      const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setDate(startOfWeek.getDate() + 6);
-
-      const params = new URLSearchParams({
-        brand_code: selectedBrand,
-        start_date: startOfWeek.toISOString().split('T')[0],
-        end_date: endOfWeek.toISOString().split('T')[0]
-      });
-
-      const response = await fetch(`${apiUrl}/planning-ai/suggestions?${params}`, { headers });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setPosts(data.suggestions || []);
-      }
-    } catch (err) {
-      console.error('Erro ao carregar sugestões:', err);
-    }
-  };
-
-  const generateWeeklyPosts = async () => {
-    if (!selectedBrand) {
-      showToast.error('Selecione uma marca primeiro');
-      return;
-    }
-
-    setLoading(true);
-    const loadingToast = showToast.loading('Gerando sugestões de postagens...');
-
-    try {
-      const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
-
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
-
-      const startOfWeek = getStartOfWeek(currentDate);
-      const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setDate(startOfWeek.getDate() + 6);
-
-      const response = await fetch(`${apiUrl}/planning-ai/generate-week`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          action: 'generate_and_save_week',
-          brand: selectedBrand,
-          startDate: format(selectedWeek, 'yyyy-MM-dd')
-        })
-      });
-
-      if (response.ok) {
-        await response.json();
-        
-        // Recarregar sugestões do banco
-        await loadSuggestions();
-        showToast.success('Sugestões geradas com sucesso!');
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        showToast.error(`Erro ao gerar sugestões: ${errorData.error || 'Erro desconhecido'}`);
-      }
-    } catch (error) {
-      console.error('Erro ao gerar sugestões:', error);
-      showToast.error('Erro ao gerar sugestões');
-    } finally {
-      showToast.dismiss(loadingToast);
-      setLoading(false);
-    }
-  };
-
-  const deleteSuggestion = async (suggestionId: string) => {
-    try {
-      const { error } = await supabase
-        .from('post_suggestions')
-        .delete()
-        .eq('id', suggestionId);
-
-      if (error) throw error;
-      
-      await loadSuggestions();
-      showToast.success('Sugestão excluída com sucesso!');
-    } catch (error) {
-      console.error('Erro ao excluir sugestão:', error);
-      showToast.error('Erro ao excluir sugestão');
-    }
-  };
 
   const getWeekDays = (): Date[] => {
     const startOfWeek = getStartOfWeek(currentDate);
@@ -248,109 +144,50 @@ export function PlanejamentoPage() {
     setCurrentDate(newDate);
   };
 
-  const getPostsForDate = (date: Date): PostSuggestion[] => {
+  const getPostsForDate = (date: Date): OrdemServico[] => {
     const dateStr = date.toISOString().split('T')[0];
-    return posts.filter(post => post.scheduled_date === dateStr);
+    return posts.filter(post => {
+      if (!post.data_publicacao_prevista) return false;
+      const postDate = post.data_publicacao_prevista.split('T')[0];
+      return postDate === dateStr;
+    });
   };
 
   const getStatusColor = (status: string) => {
     const colors = {
-      'SUGGESTION': 'bg-orange-100 text-orange-800 border-orange-200',
-      'IN_PRODUCTION': 'bg-blue-100 text-blue-800 border-blue-200',
-      'APPROVED': 'bg-green-100 text-green-800 border-green-200',
-      'POSTED': 'bg-gray-100 text-gray-800 border-gray-200'
+      'ROTEIRO': 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      'PRODUCAO': 'bg-blue-100 text-blue-800 border-blue-200',
+      'REVISAO': 'bg-purple-100 text-purple-800 border-purple-200',
+      'APROVACAO': 'bg-orange-100 text-orange-800 border-orange-200',
+      'PUBLICADO': 'bg-green-100 text-green-800 border-green-200',
+      'ARQUIVADO': 'bg-gray-100 text-gray-800 border-gray-200'
     };
     return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800 border-gray-200';
   };
 
   const getStatusLabel = (status: string) => {
     const labels = {
-      'SUGGESTION': 'Pendente Edição',
-      'IN_PRODUCTION': 'Em Produção',
-      'APPROVED': 'Aprovado',
-      'POSTED': 'Publicado'
+      'ROTEIRO': 'Roteiro',
+      'PRODUCAO': 'Produção',
+      'REVISAO': 'Revisão',
+      'APROVACAO': 'Aprovação',
+      'PUBLICADO': 'Publicado',
+      'ARQUIVADO': 'Arquivado'
     };
     return labels[status as keyof typeof labels] || status;
   };
 
-  const getTypeColor = (type: string) => {
-    const colors = {
-      'POST': 'bg-blue-500',
-      'STORY': 'bg-purple-500',
-      'REELS': 'bg-pink-500'
-    };
-    return colors[type as keyof typeof colors] || 'bg-gray-500';
+
+  const openPostDetails = (post: OrdemServico) => {
+    navigate(`/kanban?os=${post.id}`);
   };
 
-  const openPostDetails = (post: PostSuggestion) => {
-    setSelectedPost(post);
-    setShowDetailsModal(true);
-  };
 
-  const closeDetailsModal = () => {
-    setShowDetailsModal(false);
-    setSelectedPost(null);
-  };
 
-  const createOSFromPost = async (post: PostSuggestion) => {
-    if (!user?.org_id) return;
-
-    const loadingToast = showToast.loading('Criando OS...');
-
-    try {
-      const osData = {
-        titulo: post.title,
-        descricao: post.description,
-        marca: post.brand_code,
-        objetivo: 'ATRACAO',
-        tipo: 'EDUCATIVO',
-        status: 'ROTEIRO',
-        data_publicacao_prevista: `${post.scheduled_date}T${post.scheduled_time}:00`,
-        canais: ['Instagram'],
-        prioridade: 'MEDIUM',
-        gancho: post.hook,
-        cta: post.cta,
-        script_text: post.copy_final,
-        legenda: post.copy_final,
-        categorias_criativos: [post.post_type === 'POST' ? 'Instagram Feed' : `Instagram ${post.post_type}`],
-        org_id: user.org_id,
-        criado_por: user.id,
-        criado_em: new Date().toISOString(),
-        atualizado_em: new Date().toISOString()
-      };
-
-      const { error: osError } = await supabase
-        .from('ordens_de_servico')
-        .insert(osData);
-
-      if (osError) {
-        throw new Error(osError.message);
-      }
-
-      // Update suggestion status
-      const { error: updateError } = await supabase
-        .from('post_suggestions')
-        .update({ status: 'IN_PRODUCTION' })
-        .eq('id', post.id);
-
-      if (updateError) {
-        console.error('Erro ao atualizar status:', updateError);
-      }
-
-      showToast.success('OS criada com sucesso!');
-      closeDetailsModal();
-      await loadSuggestions();
-    } catch (error) {
-      console.error('Erro ao criar OS:', error);
-      showToast.error('Erro ao criar OS');
-    } finally {
-      showToast.dismiss(loadingToast);
-    }
-  };
-
-  const handleDragStart = (e: DragEvent<HTMLDivElement>, post: PostSuggestion) => {
+  const handleDragStart = (e: DragEvent<HTMLDivElement>, post: OrdemServico) => {
     setDraggedPost(post);
     e.dataTransfer.effectAllowed = 'move';
+    e.currentTarget.style.opacity = '0.5';
   };
 
   const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
@@ -363,21 +200,29 @@ export function PlanejamentoPage() {
 
     if (!draggedPost) return;
 
-    const newDateStr = targetDate.toISOString().split('T')[0];
+    const currentDate = draggedPost.data_publicacao_prevista ? new Date(draggedPost.data_publicacao_prevista) : new Date();
+    const hours = currentDate.getHours();
+    const minutes = currentDate.getMinutes();
+
+    const newDateTime = new Date(targetDate);
+    newDateTime.setHours(hours, minutes, 0, 0);
 
     try {
       const { error } = await supabase
-        .from('post_suggestions')
-        .update({ scheduled_date: newDateStr })
+        .from('ordens_de_servico')
+        .update({
+          data_publicacao_prevista: newDateTime.toISOString(),
+          atualizado_em: new Date().toISOString()
+        })
         .eq('id', draggedPost.id);
 
       if (error) throw error;
 
-      showToast.success('Post movido com sucesso!');
+      showToast.success('OS movida com sucesso!');
       await loadSuggestions();
     } catch (error) {
-      console.error('Erro ao mover post:', error);
-      showToast.error('Erro ao mover post');
+      console.error('Erro ao mover OS:', error);
+      showToast.error('Erro ao mover OS');
     } finally {
       setDraggedPost(null);
     }
@@ -413,14 +258,6 @@ export function PlanejamentoPage() {
               ))}
             </select>
             
-            <button
-              onClick={generateWeeklyPosts}
-              disabled={loading || !selectedBrand}
-              className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 disabled:opacity-50 flex items-center space-x-2"
-            >
-              <Wand2 className="w-4 h-4" />
-              <span>{loading ? 'Gerando...' : 'Gerar Sugestões'}</span>
-            </button>
           </div>
         </div>
       </div>
@@ -504,64 +341,41 @@ export function PlanejamentoPage() {
                         </div>
                       </div>
 
-                      {/* Post Type Dropdown */}
+                      {/* Brand Badge */}
                       <div className="px-2 mb-2">
-                        <select 
-                          value={post.post_type}
-                          onChange={async (e) => {
-                            try {
-                              const { error } = await supabase
-                                .from('post_suggestions')
-                                .update({ post_type: e.target.value })
-                                .eq('id', post.id);
-                              
-                              if (error) throw error;
-                              await loadSuggestions();
-                            } catch (error) {
-                              console.error('Erro ao atualizar tipo:', error);
-                              showToast.error('Erro ao atualizar tipo');
-                            }
-                          }}
-                          className="w-full text-xs border border-gray-300 rounded px-2 py-1"
-                        >
-                          <option value="POST">Post</option>
-                          <option value="STORY">Story</option>
-                          <option value="REELS">Reels</option>
-                        </select>
+                        <div className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded border border-blue-200 text-center font-medium">
+                          {post.marca}
+                        </div>
                       </div>
 
-                      {/* Thumbnail */}
-                      <div 
-                        className="aspect-square bg-gradient-to-br from-purple-100 to-blue-100 rounded-lg mx-2 mb-3 flex items-center justify-center overflow-hidden cursor-pointer"
+                      {/* Content Preview */}
+                      <div
+                        className="aspect-square bg-gradient-to-br from-purple-100 to-blue-100 rounded-lg mx-2 mb-3 flex items-center justify-center overflow-hidden cursor-pointer p-4"
                         onClick={() => openPostDetails(post)}
                       >
-                        <img 
-                          src={post.thumbnail_url} 
-                          alt={post.title}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                            target.parentElement!.innerHTML = '<span class="text-2xl">🎬</span>';
-                          }}
-                        />
+                        <div className="text-center">
+                          <div className="text-4xl mb-2">🎬</div>
+                          <div className="text-xs text-gray-600 line-clamp-3">
+                            {post.descricao || 'Sem descrição'}
+                          </div>
+                        </div>
                       </div>
 
                       {/* Post Info */}
                       <div className="px-2 pb-2">
                         <h4 className="text-sm font-medium text-gray-900 line-clamp-2 mb-2">
-                          {post.title}
+                          {post.titulo}
                         </h4>
-                        
+
                         <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
                           <div className="flex items-center">
                             <Clock className="w-3 h-3 mr-1" />
-                            {post.scheduled_time}
+                            {post.data_publicacao_prevista ? new Date(post.data_publicacao_prevista).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                           </div>
                           <div className="flex items-center">
                             <Tag className="w-3 h-3 mr-1" />
-                            <span className={`text-xs px-1 py-0.5 rounded text-white ${getTypeColor(post.post_type)}`}>
-                              {post.post_type}
+                            <span className="text-xs px-1 py-0.5 rounded bg-gray-200 text-gray-700">
+                              {post.tipo}
                             </span>
                           </div>
                         </div>
@@ -582,24 +396,12 @@ export function PlanejamentoPage() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                // Edit functionality
+                                openPostDetails(post);
                               }}
                               className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
                               title="Editar"
                             >
                               <Edit className="w-3 h-3" />
-                            </button>
-                            <button
-                              onClick={async (e) => {
-                                e.stopPropagation();
-                                if (confirm('Tem certeza que deseja excluir esta sugestão?')) {
-                                  await deleteSuggestion(post.id);
-                                }
-                              }}
-                              className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                              title="Excluir"
-                            >
-                              <Trash2 className="w-3 h-3" />
                             </button>
                           </div>
                         </div>
@@ -611,45 +413,9 @@ export function PlanejamentoPage() {
                   {dayPosts.length === 0 && (
                     <div className="text-center py-8">
                       <div className="text-gray-300 mb-2">
-                        <Plus className="w-8 h-8 mx-auto" />
+                        <Calendar className="w-8 h-8 mx-auto" />
                       </div>
-                      <button
-                        onClick={async () => {
-                          setIsGenerating(true);
-                          try {
-                            const { data: { session } } = await (await import('../lib/supabase')).supabase.auth.getSession();
-                            if (!session) return;
-
-                            const headers = {
-                              'Authorization': `Bearer ${session.access_token}`,
-                              'Content-Type': 'application/json',
-                            };
-
-                            const response = await fetch(`${apiUrl}/planning-ai/generate-single`, {
-                              method: 'POST',
-                              headers,
-                              body: JSON.stringify({
-                                action: 'generate_single_day',
-                                brand: selectedBrand,
-                                date: day.toISOString().split('T')[0]
-                              })
-                            });
-                            
-                            if (!response.ok) throw new Error('Erro ao gerar sugestão');
-                            
-                            await loadSuggestions();
-                            showToast.success('Sugestão gerada com sucesso!');
-                          } catch (error) {
-                            console.error('Erro ao gerar sugestão:', error);
-                            showToast.error('Erro ao gerar sugestão');
-                          } finally {
-                            setIsGenerating(false);
-                          }
-                        }}
-                        className="text-purple-600 hover:text-purple-800 text-sm flex items-center space-x-1 mx-auto"
-                      >
-                        <span>Gerar post</span>
-                      </button>
+                      <p className="text-xs text-gray-400">Nenhuma OS agendada</p>
                     </div>
                   )}
                 </div>
@@ -659,14 +425,6 @@ export function PlanejamentoPage() {
         </div>
       </div>
 
-      {/* Post Details Modal */}
-      {showDetailsModal && selectedPost && (
-        <PostDetailsModal
-          post={selectedPost}
-          onClose={closeDetailsModal}
-          onCreateOS={createOSFromPost}
-        />
-      )}
     </div>
   );
 }
