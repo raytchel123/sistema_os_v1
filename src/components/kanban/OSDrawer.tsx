@@ -45,36 +45,36 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
   const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && user) {
       fetchUsers();
       fetchBrands();
       if (ordem?.id) {
         fetchLogs();
       }
     }
-  }, [isOpen]);
+  }, [isOpen, user]);
 
   const fetchLogs = async () => {
-    if (!ordem?.id) return;
-    
+    if (!ordem?.id || !user) return;
+
     try {
       setLogsLoading(true);
-      const { data: { session } } = await (await import('../../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
+      const { supabase } = await import('../../lib/supabase');
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
+      const { data, error } = await supabase
+        .from('logs_evento')
+        .select(`
+          *,
+          user:users(id, nome, papel)
+        `)
+        .eq('os_id', ordem.id)
+        .order('timestamp', { ascending: false });
 
-      const response = await fetch(`${apiUrl}/api/ordens/${ordem.id}/logs`, { headers });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setLogs(data);
-        console.log('📋 Logs loaded for OS:', data);
+      if (error) {
+        console.error('❌ Error loading logs:', error);
       } else {
-        console.error('❌ Error loading logs:', response.status);
+        setLogs(data || []);
+        console.log('📋 Logs loaded for OS:', data);
       }
     } catch (err) {
       console.error('Erro ao carregar logs:', err);
@@ -114,24 +114,23 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
   }, [ordem, isOpen]);
 
   const fetchUsers = async () => {
+    if (!user) return;
+
     try {
       setUsersLoading(true);
-      const { data: { session } } = await (await import('../../lib/supabase')).supabase.auth.getSession();
-      if (!session) return;
+      const { supabase } = await import('../../lib/supabase');
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, nome, email, papel')
+        .or(`org_id.eq.${user.org_id},org_id.is.null`)
+        .order('nome');
 
-      const response = await fetch(`${apiUrl}/api/users`, { headers });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setUsers(data);
-        console.log('👥 Users loaded for drawer:', data);
+      if (error) {
+        console.error('❌ Error loading users:', error);
       } else {
-        console.error('❌ Error loading users:', response.status);
+        setUsers(data || []);
+        console.log('👥 Users loaded for drawer:', data);
       }
     } catch (err) {
       console.error('Erro ao carregar usuários:', err);
@@ -148,11 +147,10 @@ export function OSDrawer({ isOpen, onClose, ordem, onUpdate }: OSDrawerProps) {
       const { supabase } = await import('../../lib/supabase');
 
       const { data, error } = await supabase
-        .from('marcas')
-        .select('id, nome')
-        .eq('org_id', user.org_id)
+        .from('provider_settings')
+        .select('id, name, code')
         .eq('is_active', true)
-        .order('nome');
+        .order('name');
 
       if (error) {
         console.error('❌ Error loading brands:', error);

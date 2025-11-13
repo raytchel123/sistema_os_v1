@@ -4,9 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { showToast } from '../components/ui/Toast';
+import { useAuth } from '../contexts/AuthContext';
 
 export function CriarOSPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [users, setUsers] = useState<any[]>([]);
@@ -40,27 +42,29 @@ export function CriarOSPage() {
   const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
 
   useEffect(() => {
-    fetchUsers();
-    fetchBrands();
-  }, []);
+    if (user) {
+      fetchUsers();
+      fetchBrands();
+    }
+  }, [user]);
 
   const fetchBrands = async () => {
     try {
       setBrandsLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!user) return;
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
+      const { data, error } = await supabase
+        .from('provider_settings')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
 
-      const response = await fetch(`${apiUrl}/api/brands`, { headers });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setBrands(data.filter((brand: any) => brand.is_active));
+      if (error) {
+        console.error('Erro ao carregar marcas:', error);
+        return;
       }
+
+      setBrands(data || []);
     } catch (err) {
       console.error('Erro ao carregar marcas:', err);
     } finally {
@@ -71,37 +75,37 @@ export function CriarOSPage() {
   const fetchUsers = async () => {
     try {
       setUsersLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!user) return;
 
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, nome, email, papel')
+        .or(`org_id.eq.${user.org_id},org_id.is.null`)
+        .order('nome');
 
-      const response = await fetch(`${apiUrl}/api/users`, { headers });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setUsers(data);
-        
-        // Set default responsaveis if users exist
-        if (data.length > 0) {
-          const editor = data.find((u: any) => u.papel === 'EDITOR');
-          const revisor = data.find((u: any) => u.papel === 'REVISOR');
-          const video = data.find((u: any) => u.papel === 'VIDEO');
-          const designer = data.find((u: any) => u.papel === 'DESIGN');
+      if (error) {
+        console.error('Erro ao carregar usuários:', error);
+        return;
+      }
 
-          setFormData(prev => ({
-            ...prev,
-            responsaveis: {
-              edicao: editor?.id || data[0]?.id || '',
-              arte: video?.id || data[0]?.id || '',
-              revisao: revisor?.id || data[0]?.id || '',
-              design: designer?.id || data[0]?.id || ''
-            }
-          }));
-        }
+      setUsers(data || []);
+
+      // Set default responsaveis if users exist
+      if (data && data.length > 0) {
+        const editor = data.find((u: any) => u.papel === 'EDITOR');
+        const revisor = data.find((u: any) => u.papel === 'REVISOR');
+        const video = data.find((u: any) => u.papel === 'VIDEO');
+        const designer = data.find((u: any) => u.papel === 'DESIGN');
+
+        setFormData(prev => ({
+          ...prev,
+          responsaveis: {
+            edicao: editor?.id || data[0]?.id || '',
+            arte: video?.id || data[0]?.id || '',
+            revisao: revisor?.id || data[0]?.id || '',
+            design: designer?.id || data[0]?.id || ''
+          }
+        }));
       }
     } catch (err) {
       console.error('Erro ao carregar usuários:', err);
@@ -177,43 +181,31 @@ export function CriarOSPage() {
     const loadingToast = showToast.loading('Criando OS...');
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      if (!user) {
         throw new Error('Usuário não autenticado');
       }
-
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
-      const headers = {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      };
 
       const payload = {
         ...formData,
         midia_bruta_links: formData.midia_bruta_links.filter(link => link.trim()),
         criativos_prontos_links: formData.criativos_prontos_links.filter(link => link.trim()),
         data_publicacao_prevista: formData.data_publicacao_prevista || null,
-        canais: ['Instagram'], // Default channel
+        canais: ['Instagram'],
         gancho: formData.gancho || null,
-        cta: formData.cta || null
+        cta: formData.cta || null,
+        org_id: user.org_id,
+        created_by: user.id
       };
 
-      const response = await fetch(`${apiUrl}/api/ordens`, {
-        method: 'POST',  
-        headers,
-        body: JSON.stringify(payload)
-      });
+      const { data: newOS, error } = await supabase
+        .from('ordens_de_servico')
+        .insert([payload])
+        .select()
+        .single();
 
-      if (!response.ok) {
-        let msg = `HTTP ${response.status}`;
-        try {
-          const j = await response.json();
-          if (j?.error) msg += ` – ${j.error}`;
-        } catch {}
-        throw new Error(`Erro ao criar OS: ${msg}`);
+      if (error) {
+        throw new Error(`Erro ao criar OS: ${error.message}`);
       }
-
-      const newOS = await response.json();
       
       // Redirecionar para o kanban
       showToast.success('OS criada com sucesso!');
