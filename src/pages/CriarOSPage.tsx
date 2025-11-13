@@ -23,7 +23,8 @@ export function CriarOSPage() {
     responsaveis: {
       edicao: '',
       arte: '',
-      revisao: ''
+      revisao: '',
+      design: ''
     },
     prazo: '',
     marca: 'RAYTCHEL' as const,
@@ -89,13 +90,15 @@ export function CriarOSPage() {
           const editor = data.find((u: any) => u.papel === 'EDITOR');
           const revisor = data.find((u: any) => u.papel === 'REVISOR');
           const video = data.find((u: any) => u.papel === 'VIDEO');
-          
+          const designer = data.find((u: any) => u.papel === 'DESIGN');
+
           setFormData(prev => ({
             ...prev,
             responsaveis: {
               edicao: editor?.id || data[0]?.id || '',
               arte: video?.id || data[0]?.id || '',
-              revisao: revisor?.id || data[0]?.id || ''
+              revisao: revisor?.id || data[0]?.id || '',
+              design: designer?.id || data[0]?.id || ''
             }
           }));
         }
@@ -161,8 +164,8 @@ export function CriarOSPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.titulo.trim() || !formData.descricao.trim() || !formData.prazo || 
-        !formData.responsaveis.edicao || !formData.responsaveis.arte || !formData.responsaveis.revisao) {
+    if (!formData.titulo.trim() || !formData.descricao.trim() || !formData.prazo ||
+        !formData.responsaveis.edicao || !formData.responsaveis.arte || !formData.responsaveis.revisao || !formData.responsaveis.design) {
       setError('Título, descrição, prazo e responsáveis são obrigatórios');
       return;
     }
@@ -441,7 +444,7 @@ export function CriarOSPage() {
                 <span className="ml-2 text-gray-600">Carregando usuários...</span>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-xs text-gray-500 mb-1">Edição *</label>
                   <select
@@ -468,6 +471,25 @@ export function CriarOSPage() {
                     onChange={(e) => setFormData(prev => ({
                       ...prev,
                       responsaveis: { ...prev.responsaveis, arte: e.target.value }
+                    }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                    required
+                  >
+                    <option value="">Selecione...</option>
+                    {users.map(user => (
+                      <option key={user.id} value={user.id}>
+                        {user.nome} ({user.papel})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Design *</label>
+                  <select
+                    value={formData.responsaveis.design}
+                    onChange={(e) => setFormData(prev => ({
+                      ...prev,
+                      responsaveis: { ...prev.responsaveis, design: e.target.value }
                     }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                     required
