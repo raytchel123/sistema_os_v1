@@ -179,15 +179,23 @@ export function PlanejamentoPage() {
 
 
   const openPostDetails = (post: OrdemServico) => {
+    console.log('👁️ Abrindo detalhes da OS:', post.id, post.titulo);
     navigate(`/kanban?os=${post.id}`);
   };
 
 
 
   const handleDragStart = (e: DragEvent<HTMLDivElement>, post: OrdemServico) => {
+    e.stopPropagation();
     setDraggedPost(post);
     e.dataTransfer.effectAllowed = 'move';
     e.currentTarget.style.opacity = '0.5';
+    console.log('👋 Iniciando drag da OS:', post.id, post.titulo);
+  };
+
+  const handleDragEnd = (e: DragEvent<HTMLDivElement>) => {
+    e.currentTarget.style.opacity = '1';
+    console.log('✅ Finalizou drag');
   };
 
   const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
@@ -197,8 +205,14 @@ export function PlanejamentoPage() {
 
   const handleDrop = async (e: DragEvent<HTMLDivElement>, targetDate: Date) => {
     e.preventDefault();
+    e.stopPropagation();
 
-    if (!draggedPost) return;
+    if (!draggedPost) {
+      console.log('⚠️ Não há post sendo arrastado');
+      return;
+    }
+
+    console.log('🎯 Drop na data:', targetDate.toISOString());
 
     const currentDate = draggedPost.data_publicacao_prevista ? new Date(draggedPost.data_publicacao_prevista) : new Date();
     const hours = currentDate.getHours();
@@ -206,6 +220,8 @@ export function PlanejamentoPage() {
 
     const newDateTime = new Date(targetDate);
     newDateTime.setHours(hours, minutes, 0, 0);
+
+    console.log('📅 Nova data/hora:', newDateTime.toISOString());
 
     try {
       const { error } = await supabase
@@ -216,12 +232,16 @@ export function PlanejamentoPage() {
         })
         .eq('id', draggedPost.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro do Supabase:', error);
+        throw error;
+      }
 
+      console.log('✅ OS atualizada com sucesso');
       showToast.success('OS movida com sucesso!');
       await loadSuggestions();
     } catch (error) {
-      console.error('Erro ao mover OS:', error);
+      console.error('❌ Erro ao mover OS:', error);
       showToast.error('Erro ao mover OS');
     } finally {
       setDraggedPost(null);
@@ -332,6 +352,7 @@ export function PlanejamentoPage() {
                       key={post.id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, post)}
+                      onDragEnd={handleDragEnd}
                       className="bg-gray-50 rounded-lg border border-gray-200 hover:border-purple-300 transition-colors cursor-move"
                     >
                       {/* Status Badge */}
@@ -351,7 +372,10 @@ export function PlanejamentoPage() {
                       {/* Content Preview */}
                       <div
                         className="aspect-square bg-gradient-to-br from-purple-100 to-blue-100 rounded-lg mx-2 mb-3 flex items-center justify-center overflow-hidden cursor-pointer p-4"
-                        onClick={() => openPostDetails(post)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openPostDetails(post);
+                        }}
                       >
                         <div className="text-center">
                           <div className="text-4xl mb-2">🎬</div>
@@ -384,8 +408,9 @@ export function PlanejamentoPage() {
                         <div className="flex items-center justify-between pt-2 border-t border-gray-200">
                           <div className="flex items-center space-x-1">
                             <button
-                              onClick={async (e) => {
+                              onClick={(e) => {
                                 e.stopPropagation();
+                                e.preventDefault();
                                 openPostDetails(post);
                               }}
                               className="p-1 text-gray-400 hover:text-purple-600 transition-colors"
@@ -396,6 +421,7 @@ export function PlanejamentoPage() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
+                                e.preventDefault();
                                 openPostDetails(post);
                               }}
                               className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
