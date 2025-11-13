@@ -54,8 +54,8 @@ export function CriarOSPage() {
       if (!user) return;
 
       const { data, error } = await supabase
-        .from('provider_settings')
-        .select('*')
+        .from('brands')
+        .select('id, name, code')
         .eq('is_active', true)
         .order('name');
 
