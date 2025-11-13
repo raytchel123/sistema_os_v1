@@ -37,7 +37,11 @@ export function useOrdens() {
 
         const { data: ordensData, error: ordensError } = await supabase
           .from('ordens_de_servico')
-          .select('*')
+          .select(`
+            *,
+            aprovado_por_user:aprovado_por(nome),
+            reprovado_por_user:reprovado_por(nome)
+          `)
           .eq('org_id', user.org_id)
           .order('criado_em', { ascending: false });
 
@@ -51,7 +55,13 @@ export function useOrdens() {
                  (os.responsaveis && Object.values(os.responsaveis).includes(currentUserId));
         });
 
-        setOrdens(filteredOrdens || []);
+        const ordensWithNames = filteredOrdens.map((ordem: any) => ({
+          ...ordem,
+          aprovado_por_nome: ordem.aprovado_por_user?.nome,
+          reprovado_por_nome: ordem.reprovado_por_user?.nome
+        }));
+
+        setOrdens(ordensWithNames || []);
 
         const stats = {
           total: filteredOrdens.length,
@@ -91,7 +101,11 @@ export function useOrdens() {
     try {
       const { data: ordensData, error: ordensError } = await supabase
         .from('ordens_de_servico')
-        .select('*')
+        .select(`
+          *,
+          aprovado_por_user:aprovado_por(nome),
+          reprovado_por_user:reprovado_por(nome)
+        `)
         .eq('org_id', user.org_id)
         .order('criado_em', { ascending: false });
 
@@ -105,7 +119,13 @@ export function useOrdens() {
                (os.responsaveis && Object.values(os.responsaveis).includes(currentUserId));
       });
 
-      setOrdens(filteredOrdens || []);
+      const ordensWithNames = filteredOrdens.map((ordem: any) => ({
+        ...ordem,
+        aprovado_por_nome: ordem.aprovado_por_user?.nome,
+        reprovado_por_nome: ordem.reprovado_por_user?.nome
+      }));
+
+      setOrdens(ordensWithNames || []);
 
       const stats = {
         total: filteredOrdens.length,

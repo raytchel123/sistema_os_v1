@@ -34,8 +34,19 @@ export function OSCard({ ordem, onClick }: OSCardProps) {
     });
   };
 
+  const formatDateTime = (dateString: string | null) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return null;
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
   return (
-    <div 
+    <div
       onClick={onClick}
       className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 cursor-pointer hover:border-blue-300"
     >
@@ -52,7 +63,7 @@ export function OSCard({ ordem, onClick }: OSCardProps) {
           {ordem.prioridade}
         </span>
       </div>
-      
+
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <span className={`text-xs px-2 py-1 rounded ${getMarcaColor(ordem.marca)}`}>
@@ -62,7 +73,7 @@ export function OSCard({ ordem, onClick }: OSCardProps) {
             {ordem.objetivo}
           </span>
         </div>
-        
+
         {ordem.responsavel && (
           <div className="flex items-center text-xs text-gray-600">
             <div className="w-5 h-5 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mr-2">
@@ -73,8 +84,38 @@ export function OSCard({ ordem, onClick }: OSCardProps) {
             <span className="truncate">{ordem.responsavel.nome}</span>
           </div>
         )}
-        
-        {ordem.data_publicacao_prevista && (
+
+        {ordem.status === 'REPROVADO' && (
+          <div className="mt-2 pt-2 border-t border-red-100">
+            <div className="flex items-start space-x-2">
+              <span className="text-red-600 text-xs">✕</span>
+              <div className="flex-1">
+                <p className="text-xs text-red-600 font-medium">Reprovado por:</p>
+                <p className="text-xs text-red-700">{ordem.reprovado_por_nome || 'Desconhecido'}</p>
+                {ordem.motivo_reprovacao && (
+                  <p className="text-xs text-gray-600 mt-1 line-clamp-2">{ordem.motivo_reprovacao}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {ordem.status === 'APROVADO' && (
+          <div className="mt-2 pt-2 border-t border-green-100">
+            <div className="flex items-start space-x-2">
+              <span className="text-green-600 text-xs">✓</span>
+              <div className="flex-1">
+                <p className="text-xs text-green-600 font-medium">Aprovado por:</p>
+                <p className="text-xs text-green-700">{ordem.aprovado_por_nome || 'Desconhecido'}</p>
+                {ordem.aprovado_em && (
+                  <p className="text-xs text-gray-500 mt-0.5">{formatDateTime(ordem.aprovado_em)}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {ordem.data_publicacao_prevista && ordem.status !== 'REPROVADO' && ordem.status !== 'APROVADO' && (
           <div className="flex items-center text-xs text-gray-500">
             {formatDate(ordem.data_publicacao_prevista) && (
               <span>📅 {formatDate(ordem.data_publicacao_prevista)}</span>
