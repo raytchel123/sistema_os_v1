@@ -331,7 +331,9 @@ export function UsuariosPage() {
     { value: 'EDITOR', label: 'Editor' },
     { value: 'REVISOR', label: 'Revisor' },
     { value: 'CRISPIM', label: 'Crispim' },
-    { value: 'SOCIAL', label: 'Social Media' }
+    { value: 'SOCIAL', label: 'Social Media' },
+    { value: 'DESIGN', label: 'Design' },
+    { value: 'DESENVOLVEDOR', label: 'Desenvolvedor' }
   ];
 
   return (
