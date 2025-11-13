@@ -92,6 +92,15 @@ export function KanbanPage() {
     refetch();
   }, [refetch]);
 
+  useEffect(() => {
+    if (selectedOrdem && isDrawerOpen) {
+      const updatedOrdem = ordens.find(o => o.id === selectedOrdem.id);
+      if (updatedOrdem) {
+        setSelectedOrdem(updatedOrdem);
+      }
+    }
+  }, [ordens, selectedOrdem, isDrawerOpen]);
+
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto">
